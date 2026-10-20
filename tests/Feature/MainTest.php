@@ -9,6 +9,30 @@ use Tests\TestCase;
 
 class MainTest extends TestCase
 {
+    /** @test */
+    public function PingReturnsCurrentAccountBalances()
+    {
+        $user = User::create([
+            'name' => 'Balance Test',
+            'email' => uniqid('balance-test-', true).'@example.test',
+            'password' => bcrypt('password'),
+        ]);
+        $user->balance = 123.45;
+        $user->demo_balance = 678.90;
+        $user->save();
+
+        try {
+            $this->actingAs($user)
+                ->postJson('/ping')
+                ->assertOk()
+                ->assertExactJson([
+                    'balance' => '123.45',
+                    'demo_balance' => '678.90',
+                ]);
+        } finally {
+            $user->forceDelete();
+        }
+    }
 
     /** @test */
 

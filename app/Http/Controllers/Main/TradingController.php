@@ -81,7 +81,7 @@ class TradingController extends Controller
 
   public function ping(Request $request, TradingService $tradingService)
   {
-    return null;
+    return response()->json($tradingService->ping($request));
   }
 
   private function formatSeconds($seconds_from, TradingService $tradingService)

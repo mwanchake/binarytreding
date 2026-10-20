@@ -1,29 +1,22 @@
 <template>
     <div class="content-wrapper">
         <div class="content-body">
-
-            <div v-for="value in errors" class="alert bg-rgba-danger alert-dismissible mb-2" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+            <div v-for="(value, index) in errors" :key="'error-' + index" class="alert bg-rgba-danger alert-dismissible mb-2" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @click="errors.splice(index, 1)">
+                    <span aria-hidden="true">&times;</span>
                 </button>
                 <div class="d-flex align-items-center">
                     <i class="bx bx-error"></i>
-                    <span>
-                      {{ value }}
-                    </span>
+                    <span>{{ value }}</span>
                 </div>
             </div>
 
-            <div v-for="value in success" class="alert bg-rgba-success alert-dismissible mb-2" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-                <div class="d-flex align-items-center">
-                    <i class="bx bx-error"></i>
-                    <span>
-                      {{ value }}
-                    </span>
-                </div>
+            <div v-if="pendingDeposit" class="alert alert-info" role="status">
+                <p>{{ pendingDeposit.message }}</p>
+                <p>{{ $i18n.t('deposit_usd_amount') }}: ${{ pendingDeposit.usd_amount }}</p>
+                <p>{{ $i18n.t('deposit_current_rate') }}: {{ Number(pendingDeposit.exchange_rate).toFixed(2) }} KES/USD</p>
+                <p>{{ $i18n.t('deposit_kes_paid') }}: KES {{ Number(pendingDeposit.kes_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                <p>{{ $i18n.t('deposit_reference') }}: {{ pendingDeposit.reference }}</p>
             </div>
 
             <div class="row">
@@ -34,114 +27,35 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body">
-                                <div class="card-text">
-                                    <div class="row">
-                                        <div class="col-md-6 pt-3">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <img class="img-fluid" src="/images/icon/cards.png" style="margin-top: 5px;">
-                                                </div>
-                                                <div class="col-md-6">
-                                                        <p class="mb-0"><i class="bx bxs-dollar-circle align-middle"></i> {{ $i18n.t('deposit_min_amount') }}: $5</p>
-                                                        <p class="mb-0"><i class="bx bx-wallet align-middle"></i> {{ $i18n.t('deposit_without_commission') }}</p>
-                                                        <p class="mb-0"><i class="bx bx-undo align-middle"></i> {{ $i18n.t('deposit_fast_withdrawal') }}</p>
-                                                        <p class="mb-0"><i class="bx bx-check align-middle"></i> {{ $i18n.t('deposit_minimal_withdrawal') }}: $10</p>
-                                                </div>
-                                                <div class="col-md-12 mt-3">
-                                                  <fieldset class="form-group">
-                                                    <label class="align-top">{{ $i18n.t('payout_system') }}</label>
-                                                    <select2 v-model="system" :style="'width: 100%;'" :options="systems" :settings="{ settingOption: 'value', settingOption: 'value', minimumResultsForSearch: Infinity }"/>
-                                                  </fieldset>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <fieldset class="form-group" style="margin-bottom: 3px;">
-                                                        <label>{{ $i18n.t('deposit_deposit_amount') }}</label>
-                                                        <small class="text-muted">{{ $i18n.t('deposit_min') }}. <i>5$</i></small>
-                                                        <template>
-                                                            <input ref="ci" type="text" class="form-control" v-model="amount" v-currency="{currency: null, autoDecimalMode: true, valueRange: {min: 5, max: 10000}}">
-                                                        </template>
-                                                    </fieldset>
-                                                    <div class="row mb-1 mr-0 ml-0">
-                                                        <div class="col-md-3 pl-0" style="padding-right: 3px;">
-                                                            <button @click="setAmount(150)" type="button" class="btn w-100 btn-sm btn-outline-dark">$ 150</button>
-                                                        </div>
-                                                        <div class="col-md-3 pl-0" style="padding-right: 1.5px;">
-                                                            <button @click="setAmount(200)" type="button" class="btn w-100 btn-sm btn-outline-dark">$ 200</button>
-                                                        </div>
-                                                        <div class="col-md-3 pr-0" style="padding-left: 1.5px;">
-                                                            <button @click="setAmount(300)" type="button" class="btn w-100 btn-sm btn-outline-dark">$ 300</button>
-                                                        </div>
-                                                        <div class="col-md-3 pr-0" style="padding-left: 3px;">
-                                                            <button @click="setAmount(500)" type="button" class="btn w-100 btn-sm btn-outline-dark">$ 500</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <fieldset class="form-group" style="margin-bottom: 10px;">
-                                                        <label>{{ $i18n.t('deposit_promo_code') }}</label>
-                                                        <small class="text-muted">({{ $i18n.t('deposit_not_necessary') }})</small>
-                                                        <div class="input-group">
-                                                            <input v-model="promocode" type="text" class="form-control">
-                                                            <div class="input-group-append">
-                                                                <button v-show="this.promocode !== this.prev_promocode" @click="checkPromocode" class="btn btn-secondary" type="button">{{ $i18n.t('deposit_check') }}</button>
-                                                            </div>
-                                                        </div>
-                                                    </fieldset>
-                                                    <div class="custom-control custom-switch custom-control-inline mb-1">
-                                                        <input v-model="use_promocode" type="checkbox" class="custom-control-input" id="customSwitch1">
-                                                        <label class="custom-control-label mr-1" for="customSwitch1">
-                                                        </label>
-                                                        <span>{{ $i18n.t('deposit_use_bonus') }} <small v-if="promocode_info" v-show="use_promocode" class="cursor-pointer" v-b-tooltip.hover v-bind:title="$i18n.t('deposit_need_work_out') + ' ' + promocode_info.turnover + ' ' + $i18n.t('deposit_times_from_bonus')">({{ $i18n.t('deposit_rules') }})</small></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 pt-2">
-                                                    <button v-show="depositLoaded" v-bind:disabled="isAdmin" @click="proccess" type="button" class="btn btn-outline-secondary mr-1 mb-1">{{ $i18n.t('deposit_continue') }}</button>
-                                                    <button v-show="!depositLoaded" v-bind:disabled="true" @click="proccess" type="button" class="btn btn-outline-secondary mr-1 mb-1"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ $i18n.t('deposit_continue') }}</button>
-                                                </div>
-                                                <div class="col-md-6 pt-2 text-right align-bottom">
-                                                    <p style="padding-top:10px;">
-                                                      {{ $i18n.t('deposit_you_get') }}
-                                                        <span class="text-white" style="font-size: 1.3rem;">$
-                                                            {{ show_amount }}
-                                                        </span>
-                                                        <span v-if="promocode_info && bonus_percent" v-show="use_promocode">({{ $i18n.t('deposit_bonus') }} {{ promocode_info.bonus_size }}%)</span>
-                                                        <span v-show="!use_promocode || !bonus_percent">({{ $i18n.t('deposit_without_bonus') }})</span>
-                                                    </p>
-                                                </div>
+                                <p class="text-muted">{{ $i18n.t('deposit_payhero_info') }}</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <fieldset class="form-group">
+                                            <label for="depositAmount">{{ $i18n.t('deposit_deposit_amount') }} (USD)</label>
+                                            <small class="text-muted d-block">{{ $i18n.t('deposit_min') }}. $5</small>
+                                            <input id="depositAmount" ref="ci" v-model="amount" type="text" class="form-control"
+                                                   v-currency="{currency: null, autoDecimalMode: true, valueRange: {min: 5, max: 10000}}">
+                                        </fieldset>
+                                        <div class="row mb-1 mr-0 ml-0">
+                                            <div v-for="preset in presets" :key="preset" class="col-3 px-1">
+                                                <button type="button" class="btn w-100 btn-sm btn-outline-dark" @click="setAmount(preset)">
+                                                    ${{ preset }}
+                                                </button>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h4 class="card-title">{{ $i18n.t('deposit_select_your_bonus') }}</h4>
-                                            <div class="row" v-for="current in bonus" style="padding-bottom: 5px;">
-                                                <div class="col-md-12">
-                                                    <div @click="setBonusId(current.min_amount)" class="btn btn-light-secondary w-100" :class="{'yellow-outline' : current.min_amount === bonus_id || current.min_amount === 500, 'checked-box' : current.min_amount === bonus_id}">
-                                                        <div class="row">
-                                                            <div class="col-md-3">
-                                                                <fieldset>
-                                                                    <div class="radio radio-primary radio-glow" style="padding-top: 5px;">
-                                                                        <input type="radio" :id="'radio'+current.min_amount" :value="current.min_amount" v-model="bonus_id" name="radioGlow" disabled="disabled">
-                                                                        <label :for="'radio'+current.min_amount"></label>
-                                                                    </div>
-                                                                </fieldset>
-                                                            </div>
-                                                            <div class="col-md-2">
-                                                                $ {{ current.min_amount.toLocaleString(undefined, {minimumFractionDigits: 0}) }}
-                                                            </div>
-                                                            <div class="col-md-3 text-success">
-                                                              {{ $i18n.t('deposit_bonus') }} {{ current.bonus_size }} %
-                                                            </div>
-                                                            <div class="col-md-1">
-                                                                =
-                                                            </div>
-                                                            <div class="col-md-2">
-                                                                $ {{ (parseInt((current.min_amount).toString().replace(' ', '')) * current.bonus_size / 100).toString().replace(/(?<!\..*)(\d)(?=(?:\d{3})+(?:\.|$))/g, '$1 ') }}
-                                                            </div>
-                                                            <i v-b-tooltip.hover v-bind:title="$i18n.t('deposit_need_work_out') + ' ' + current.turnover + ' ' + $i18n.t('deposit_times_from_bonus')" style="color: #8a99b5;" class="bx bx-help-circle cursor-pointer"></i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <fieldset class="form-group">
+                                            <label for="payheroPhone">{{ $i18n.t('deposit_mpesa_phone') }}</label>
+                                            <input id="payheroPhone" v-model.trim="phoneNumber" type="tel" inputmode="tel"
+                                                   maxlength="13" class="form-control" placeholder="07XXXXXXXX or 2547XXXXXXXX"
+                                                   autocomplete="tel">
+                                            <small class="form-text text-muted">{{ $i18n.t('deposit_mpesa_phone_format') }}</small>
+                                        </fieldset>
+                                        <button type="button" class="btn btn-primary" :disabled="!depositLoaded || isAdmin" @click="createDeposit">
+                                            <span v-if="!depositLoaded" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            {{ depositLoaded ? $i18n.t('deposit_payhero_submit') : $i18n.t('deposit_processing') }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -149,140 +63,81 @@
                     </section>
                 </div>
             </div>
+            <deposit-history ref="datatables"></deposit-history>
         </div>
-        <deposit-history ref="datatables"></deposit-history>
     </div>
 </template>
 
 <script>
-    import { CurrencyDirective, setValue, getValue } from 'vue-currency-input'
+    import { CurrencyDirective, setValue } from 'vue-currency-input'
 
     export default {
-        name: "Deposit",
-        mounted() {
-            let self = this;
-            axios.post('/data/getDepositPromocodes')
-                .then(function (response) {
-                    self.bonus = response.data;
-                    self.promocode = self.bonus.find(item => item.min_amount == 500).code;
-                    self.prev_promocode = self.promocode;
-                    self.promocode_info = self.bonus.find(item => item.min_amount == 500);
-                });
-          axios.post('/data/getAllDepositSystems')
-              .then(function (response) {
-                self.systems = response.data;
-                self.system = response.data[0].id;
-              });
+        name: 'Deposit',
+        directives: {
+            currency: CurrencyDirective
         },
         data: function () {
             return {
                 depositLoaded: true,
-                bonus: [],
-                bonus_id: 500,
-                amount: '500',
-                prev_promocode: '',
-                promocode: '',
-                promocode_info: null,
-                use_promocode: false,
+                amount: '10',
+                phoneNumber: '',
                 errors: [],
-                success: [],
-                system: '',
-                systems: [],
-            }
-        },
-        methods: {
-            setBonusId: function (id) {
-                this.use_promocode = true;
-                this.bonus_id = id;
-                this.promocode = this.bonus.find(item => item.min_amount == id).code;
-                this.prev_promocode = this.promocode;
-                this.promocode_info = this.bonus.find(item => item.min_amount == id);
-                this.setAmount(this.promocode_info.min_amount);
-                if(id == 500){
-                    toastr.warning(this.$i18n.t('deposit_recommended_amount'), this.$i18n.t('deposit_attention'), {
-                        positionClass: 'toast-bottom-left',
-                        containerId: 'toast-bottom-left'
-                    });
-                }
-            },
-            setAmount: function (amount) {
-                setValue(this.$refs.ci, amount.toFixed(2))
-            },
-            checkPromocode: function () {
-                let self = this;
-                this.errors = [];
-                this.success = [];
-                axios.post('/promocode', { code: this.promocode, id: this.$route.params.id })
-                    .then(function (response) {
-                        if(response.data.success === false) {
-                            self.errors.push(response.data.message);
-                            self.promocode_info = null;
-                            self.prev_promocode = self.promocode;
-                        } else {
-                            self.prev_promocode = self.promocode;
-                            self.promocode_info = response.data.data;
-                            self.success.push(response.data.message);
-                        }
-                    });
-            },
-            proccess: function () {
-              let self = this;
-              this.errors = [];
-              this.success = [];
-              this.depositLoaded = false;
-              axios.post('/data/deposit', { amount: self.numericAmount, promocode: self.selected_promocode, system_id: this.system})
-                  .then(function (response) {
-                    if(response.data.success === true) {
-                      toastr.success(response.data.message, self.$i18n.t('deposit_success'), {
-                        positionClass: 'toast-bottom-left',
-                        containerId: 'toast-bottom-left'
-                      });
-                      self.$refs.datatables.updateDatatables();
-                      setTimeout(() => { window.location.href = response.data.link; self.depositLoaded = true; }, response.data.timeout);
-                    } else {
-                      self.errors.push(response.data.message);
-                      self.depositLoaded = true;
-                    }
-                  })
+                pendingDeposit: null,
+                presets: [10, 20, 50, 100],
             }
         },
         computed: {
-            isAdmin: function (){
-              return this.$route.meta.isAdmin;
+            isAdmin: function () {
+                return this.$route.meta.isAdmin;
             },
             numericAmount: function () {
                 return this.$ci.parse(this.amount);
             },
-            show_amount: function () {
-                let amount = this.numericAmount;
-                if(this.promocode_info && this.use_promocode && this.prev_promocode === this.promocode){
-                    amount = amount + (amount * this.promocode_info.bonus_size * 0.01);
-                }
-                return amount.toLocaleString(undefined, {minimumFractionDigits: 2});
+        },
+        methods: {
+            setAmount: function (amount) {
+                setValue(this.$refs.ci, amount.toFixed(2));
             },
-            bonus_percent: function () {
-                if(this.promocode_info && this.prev_promocode === this.promocode){
-                    return this.promocode_info.bonus_size;
+            createDeposit: function () {
+                this.errors = [];
+                this.pendingDeposit = null;
+
+                const amount = Number(this.numericAmount);
+                const phoneNumber = this.phoneNumber.replace(/[\s-]/g, '');
+                if (!Number.isFinite(amount) || amount < 5 || amount > 10000) {
+                    this.errors.push(this.$i18n.t('deposit_payhero_invalid_amount'));
+                    return;
                 }
-                return null;
-            },
-            selected_promocode: function () {
-                if(this.promocode_info && this.prev_promocode === this.promocode && this.use_promocode){
-                    return this.promocode_info.id;
+                if (!/^(?:\+?254|0)(?:7|1)\d{8}$/.test(phoneNumber)) {
+                    this.errors.push(this.$i18n.t('deposit_mpesa_phone_invalid'));
+                    return;
                 }
-                return '';
+
+                this.depositLoaded = false;
+                axios.post('/data/payhero/deposit', {
+                    amount: amount,
+                    phone_number: phoneNumber,
+                }).then((response) => {
+                    if (response.data.success !== true) {
+                        this.errors.push(response.data.message || this.$i18n.t('deposit_payhero_failed'));
+                        return;
+                    }
+
+                    this.pendingDeposit = response.data;
+                    this.$nextTick(() => this.$refs.datatables.updateDatatables());
+                    toastr.info(this.$i18n.t('deposit_payhero_sent'), this.$i18n.t('deposit_title'), {
+                        positionClass: 'toast-bottom-left',
+                        containerId: 'toast-bottom-left'
+                    });
+                }).catch((error) => {
+                    const message = error.response && error.response.data && error.response.data.message
+                        ? error.response.data.message
+                        : this.$i18n.t('deposit_payhero_failed');
+                    this.errors.push(message);
+                }).finally(() => {
+                    this.depositLoaded = true;
+                });
             }
         },
     }
 </script>
-
-<style scoped>
-    .yellow-outline {
-        border: 1px solid #63630b;
-    }
-
-    .checked-box {
-        background-color: #3e536b !important;
-        border: 1px solid #8e8e10;
-    }
-</style>

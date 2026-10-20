@@ -25,5 +25,6 @@ class VerifyCsrfToken extends Middleware
         '/qiwi/process',
         '/yoomoney/process',
         '/cryptonator/process',
+        '/payhero/webhook',
     ];
 }

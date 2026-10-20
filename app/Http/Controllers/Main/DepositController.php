@@ -6,6 +6,7 @@ use App\Events\ChangeBalance;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MainHttp\Deposit\DepositHistoryRequest;
+use App\Http\Requests\MainHttp\Deposit\PayHeroDepositRequest;
 use App\Http\Requests\MainHttp\Deposit\StartDepositRequest;
 use App\Models\Deposit;
 use App\Models\DepositSystem;
@@ -52,6 +53,33 @@ class DepositController extends Controller
     {
         $service  = $depositService->startDeposit($request);
         return response()->json($service['data'], $service['status']);
+    }
+
+    public function initiatePayHeroDeposit(PayHeroDepositRequest $request, DepositService $depositService)
+    {
+        $service = $depositService->initiatePayHeroDeposit($request);
+        return response()->json($service['data'], $service['status']);
+    }
+
+    public function payHeroWebhook(Request $request, DepositService $depositService)
+    {
+        try {
+            $result = $depositService->processPayHeroWebhook($request->all());
+        } catch (\Illuminate\Http\Client\ConnectionException $exception) {
+            Log::error('Unable to verify the PayHero callback because its status API is unavailable.', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'PayHero payment verification is temporarily unavailable.'], 503);
+        } catch (\RuntimeException $exception) {
+            Log::warning('PayHero webhook could not complete a deposit.', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => $exception->getMessage()], 400);
+        }
+
+        return response()->json(['received' => true, 'message' => $result['message']]);
     }
 
     public function processPayeer(Request $request, DepositService $depositService)

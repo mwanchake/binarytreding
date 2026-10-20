@@ -34,9 +34,16 @@ class TradingService
 {
     public function getAuthTokenServ(Request $request)
     {
-        return Cache::remember('authTokenServ', 3600 * 24, function () {
-            $login = config('tradingview.login');
-            $password = config('tradingview.password');
+        $login = config('tradingview.login');
+        $password = config('tradingview.password');
+        $cacheKey = empty($login) || empty($password)
+            ? 'authTokenServ_anonymous'
+            : 'authTokenServ_authenticated';
+
+        return Cache::remember($cacheKey, 3600 * 24, function () use ($login, $password) {
+            if (empty($login) || empty($password)) {
+                return 'unauthorized_user_token';
+            }
 
             $auth_token = "";
             if (file_exists(__DIR__ . '/cookie.txt')) {
@@ -81,8 +88,16 @@ class TradingService
                 curl_setopt($ch, CURLOPT_ENCODING, "gzip");
                 curl_setopt($ch, CURLOPT_POSTFIELDS, "feature_source=Header&username=$login&password=$password&remember=on");
                 $curl_exec = curl_exec($ch);
+                if ($curl_exec === false) {
+                    $error = curl_error($ch);
+                    curl_close($ch);
+                    throw new \RuntimeException('TradingView authentication request failed: '.$error);
+                }
                 curl_close($ch);
                 $json = json_decode($curl_exec);
+                if (!isset($json->user->auth_token) || !is_string($json->user->auth_token)) {
+                    throw new \RuntimeException('TradingView authentication response did not include an auth token.');
+                }
                 $auth_token = $json->user->auth_token;
             }
 
@@ -274,7 +289,12 @@ class TradingService
 
     public function ping(Request $request)
     {
-        return null;
+        $user = Auth::user();
+
+        return [
+            'balance' => number_format((float) $user->balance, 2, '.', ''),
+            'demo_balance' => number_format((float) $user->demo_balance, 2, '.', ''),
+        ];
     }
 
     public function formatSecondsServ($seconds_from)

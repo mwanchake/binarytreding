@@ -13,13 +13,14 @@ class CreateMarketStatusesTable extends Migration
      */
     public function up()
     {
-        Schema::connection('mysql')->create('market_statuses', function (Blueprint $table) {
-            $table->engine = 'MEMORY';
-            $table->id();
-            $table->integer('symbol_id')->index()->nullable();
-            $table->string('market_status')->nullable();
-            $table->timestamps(6);
-        });
+        Schema::connection(config('database.default') === 'sqlite' ? null : 'mysql')
+            ->create('market_statuses', function (Blueprint $table) {
+                $table->engine = 'MEMORY';
+                $table->id();
+                $table->integer('symbol_id')->index()->nullable();
+                $table->string('market_status')->nullable();
+                $table->timestamps(6);
+            });
     }
 
     /**
@@ -29,6 +30,7 @@ class CreateMarketStatusesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('market_statuses');
+        Schema::connection(config('database.default') === 'sqlite' ? null : 'mysql')
+            ->dropIfExists('market_statuses');
     }
 }

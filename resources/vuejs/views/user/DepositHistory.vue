@@ -13,10 +13,12 @@
                                     <table class="table" id="historyDeposit" style="width:100%">
                                         <thead>
                                         <tr>
-                                            <th>{{ $i18n.t('deposit_history_amount') }}</th>
+                                            <th>{{ $i18n.t('deposit_usd_amount') }}</th>
+                                            <th>{{ $i18n.t('deposit_kes_paid') }}</th>
+                                            <th>{{ $i18n.t('deposit_market_rate') }}</th>
+                                            <th>{{ $i18n.t('deposit_effective_rate') }}</th>
                                             <th>{{ $i18n.t('deposit_history_status') }}</th>
-                                            <th>{{ $i18n.t('deposit_history_system') }}</th>
-                                            <th>{{ $i18n.t('deposit_history_date') }}</th>
+                                            <th>{{ $i18n.t('deposit_reference') }}</th>
                                         </tr>
                                         </thead>
                                     </table>
@@ -31,7 +33,6 @@
 </template>
 
 <script>
-    import dateformat from "dateformat";
     import { getCookie } from "../../js/functions";
 
     require('../../../vendors/js/tables/datatable/datatables.min.js');
@@ -58,7 +59,7 @@
             "iDisplayLength": 10,
             "processing": true,
             "serverSide": true,
-            "order": [[3, "desc"]],
+            "order": [],
             "drawCallback": function(settings) {
               $('[data-toggle="popover"]').popover({ html : true });
             },
@@ -73,10 +74,54 @@
               {
                 orderable: false,
                 searchable: false,
-                data: 'amount',
-                name: 'amount',
-                render: function(data, type) {
-                  return parseFloat(data).toFixed(2) + ' $';
+                data: null,
+                name: 'usd_amount',
+                render: function(data) {
+                  return parseFloat(data.usd_amount || data.amount).toFixed(2) + ' $';
+                }
+              },
+              {
+                orderable: false,
+                searchable: false,
+                data: 'kes_amount',
+                name: 'kes_amount',
+                render: function(data) {
+                  return data === null ? '-' : 'KES ' + parseFloat(data).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  });
+                }
+              },
+              {
+                orderable: false,
+                searchable: false,
+                data: null,
+                name: 'market_rate',
+                render: function(data) {
+                  const rate = data.market_rate || data.exchange_rate;
+                  if (rate === null || rate === undefined) {
+                    return '-';
+                  }
+                  return '1 USD = ' + parseFloat(rate).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 6
+                  }) + ' KES';
+                }
+              },
+              {
+                orderable: false,
+                searchable: false,
+                data: null,
+                name: 'effective_rate',
+                render: function(data) {
+                  const rate = data.effective_rate || data.exchange_rate;
+                  if (rate === null || rate === undefined) {
+                    return '-';
+                  }
+                  return '1 USD = ' + parseFloat(rate).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 6
+                  }) + ' KES';
                 }
               },
               {
@@ -92,7 +137,7 @@
                     } else if(data == 1){
                       string = '<div class="badge badge-success">' + self.$i18n.t('deposit_history_success') + '</div>';
                     } else if(data == 2){
-                      string = '<div class="badge badge-success">' + self.$i18n.t('deposit_history_cancel') + '</div>';
+                      string = '<div class="badge badge-danger">' + self.$i18n.t('deposit_history_cancel') + '</div>';
                     }
                   }
                   return string;
@@ -101,21 +146,10 @@
               {
                 orderable: false,
                 searchable: false,
-                data: 'deposit_system.text',
-                name: 'deposit_system.text',
-                render: function(data, type) {
-                  return data;
-                }
-              },
-              {
-                data: 'created_at',
-                name: 'created_at',
-                render: function(data, type) {
-                  let date = new Date();
-                  if (type === 'display') {
-                    date = new Date(data);
-                  }
-                  return dateformat(date, 'HH:MM:ss dd-mm-yyyy');
+                data: 'reference',
+                name: 'reference',
+                render: function(data) {
+                  return data || '-';
                 }
               },
             ]

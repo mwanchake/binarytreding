@@ -6,6 +6,7 @@ use App\Events\ChangeBalance;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MainHttp\Deposit\DepositHistoryRequest;
+use App\Http\Requests\MainHttp\Deposit\PayHeroDepositRequest;
 use App\Http\Requests\MainHttp\Deposit\StartDepositRequest;
 use App\Models\Deposit;
 use App\Models\DepositSystem;
@@ -23,10 +24,143 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Ixudra\Curl\Facades\Curl;
 use Qiwi\Api\BillPayments;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
 class DepositService
 {
+    public function initiatePayHeroDeposit(PayHeroDepositRequest $request)
+    {
+        try {
+            $exchangeRate = app(ExchangeRateService::class)->getLatestUsdKesRate();
+        } catch (ExchangeRateUnavailableException $exception) {
+            return [
+                'data' => [
+                    'success' => false,
+                    'message' => 'Deposits are unavailable until the USD/KES rate is updated.',
+                ],
+                'status' => 503,
+            ];
+        }
+
+        $usdAmount = number_format((float) $request->amount, 2, '.', '');
+        $kesAmount = number_format(
+            round((float) $usdAmount * (float) $exchangeRate->effective_rate),
+            2,
+            '.',
+            ''
+        );
+        $reference = (string) Str::uuid();
+        $deposit = new Deposit();
+        $deposit->user_id = Auth::id();
+        $deposit->amount = $usdAmount;
+        $deposit->usd_amount = $usdAmount;
+        $deposit->kes_amount = $kesAmount;
+        $deposit->exchange_rate = $exchangeRate->effective_rate;
+        $deposit->market_rate = $exchangeRate->market_rate;
+        $deposit->effective_rate = $exchangeRate->effective_rate;
+        $deposit->markup_percent = $exchangeRate->markup_percent;
+        $deposit->phone_number = $request->phone_number;
+        $deposit->system_id = 'payhero';
+        $deposit->status = 0;
+        $deposit->reference = $reference;
+        $deposit->save();
+
+        try {
+            $gatewayTransaction = app(PayHeroService::class)->initiateStkPush($deposit);
+        } catch (\Illuminate\Http\Client\ConnectionException|\RuntimeException $exception) {
+            $deposit->status = 2;
+            $deposit->save();
+            Log::error('PayHero failed to initiate an M-Pesa STK Push.', [
+                'deposit_id' => $deposit->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [
+                'data' => [
+                    'success' => false,
+                    'message' => 'Unable to start the M-Pesa payment. Please try again.',
+                ],
+                'status' => 502,
+            ];
+        }
+
+        $deposit->gateway_reference = $gatewayTransaction['reference'];
+        $deposit->checkout_request_id = $gatewayTransaction['checkout_request_id'];
+        $deposit->save();
+
+        return [
+            'data' => [
+                'success' => true,
+                'message' => 'M-Pesa payment request sent. Check your phone and enter your M-Pesa PIN.',
+                'usd_amount' => $usdAmount,
+                'kes_amount' => $kesAmount,
+                'exchange_rate' => $exchangeRate->effective_rate,
+                'reference' => $reference,
+            ],
+            'status' => 200,
+        ];
+    }
+
+    public function processPayHeroWebhook(array $payload)
+    {
+        $result = app(PayHeroService::class)->processWebhook($payload);
+        if (!$result['successful']) {
+            if ($result['terminal_failure']) {
+                Deposit::where('id', $result['deposit']->id)
+                    ->where('status', 0)
+                    ->update(['status' => 2]);
+            }
+
+            Log::info('PayHero reported an unsuccessful STK Push.', [
+                'deposit_id' => $result['deposit']->id,
+                'message' => $result['message'],
+            ]);
+
+            return ['message' => $result['message']];
+        }
+
+        $completion = DB::transaction(function () use ($result) {
+            $deposit = Deposit::where('id', $result['deposit']->id)->lockForUpdate()->first();
+            if (!$deposit) {
+                throw new \RuntimeException('The PayHero deposit no longer exists.');
+            }
+            if ((int) $deposit->status === 1) {
+                return ['completed' => false, 'user_id' => $deposit->user_id];
+            }
+            if ((int) $deposit->status !== 0) {
+                throw new \RuntimeException('The PayHero deposit is not pending.');
+            }
+
+            $user = User::where('id', $deposit->user_id)->lockForUpdate()->first();
+            if (!$user) {
+                throw new \RuntimeException('The user for this PayHero deposit no longer exists.');
+            }
+
+            $credit = (float) $deposit->usd_amount;
+            $user->increment('balance', $credit);
+            $deposit->status = 1;
+            $deposit->save();
+
+            if ($user->referer_id) {
+                $referrer = User::where('id', $user->referer_id)->first();
+                if ($referrer && $referrer->partner_status) {
+                    $referrer->increment('balance', $credit * 0.1);
+                }
+                Referral::where('user_id', $user->referer_id)->increment('deposit_count', $credit);
+            }
+
+            return ['completed' => true, 'user_id' => $user->id];
+        });
+
+        if ($completion['completed']) {
+            $user = User::where('id', $completion['user_id'])->first();
+            broadcast(new ChangeBalance($user->balance, $user));
+        }
+
+        return ['message' => 'PayHero M-Pesa payment verified and deposit completed.'];
+    }
+
     public function getAllDepositSystems(Request $request){
         return DepositSystem::where('hidden', 0)->orderBy('order', 'asc')->get()->map(function($item){
             $item->id = $item->text;
@@ -69,6 +203,46 @@ class DepositService
         } else {
             return 'Invalid cipher';
         }
+    }
+
+    private function validateDepositPromocode($promocodeId, $amount)
+    {
+        $promocode = Promocode::where('id', $promocodeId)->first();
+        if (!$promocode) {
+            return ['success' => false, 'message' => __('locale.deposit_promo_code')];
+        }
+
+        $activeFrom = Carbon::parse($promocode->active_from);
+        $activeTo = Carbon::parse($promocode->active_to);
+        if (Carbon::now() < $activeFrom || Carbon::now() > $activeTo) {
+            return ['success' => false, 'message' => __('locale.deposit_time_left')];
+        }
+
+        $userId = Auth::id();
+        $completedDeposits = Deposit::where('user_id', $userId)->where('status', 1)->count()
+            + LatestOrder::where('user_id', $userId)->count()
+            + PromocodeHistory::where('user_id', $userId)->whereHas('promocode', function ($query) {
+                $query->where('for_new', 1);
+            })->count();
+        if ($promocode->for_new && $completedDeposits) {
+            return ['success' => false, 'message' => __('locale.deposit_only_for_new')];
+        }
+
+        $previousUses = PromocodeHistory::where('user_id', $userId)
+            ->where('promocode_id', $promocode->id)
+            ->count();
+        if ($promocode->attempts && $previousUses >= $promocode->attempts) {
+            return ['success' => false, 'message' => __('locale.deposit_already_used')];
+        }
+
+        if ($amount < $promocode->min_amount) {
+            return [
+                'success' => false,
+                'message' => __('locale.deposit_from_amount').' '.$promocode->min_amount.'$!',
+            ];
+        }
+
+        return ['success' => true, 'promocode_id' => $promocode->id];
     }
 
     public function startDeposit(StartDepositRequest $request){

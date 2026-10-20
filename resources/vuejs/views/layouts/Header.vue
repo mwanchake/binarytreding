@@ -167,6 +167,7 @@
         },
         mounted() {
             $('.dropdown-toggle').dropdown();
+            this.updateAccountType(this.$router.resolve(window.location.pathname).route);
             if(new Date(this.user.created_at).getTime() + 24*60*60*1000 > new Date().getTime() && parseInt(this.user.balance) === 0){
               if(localStorage.getItem('popupWindowDiscount') === null){
                 localStorage.setItem('popupWindowDiscount', (new Date().getTime() + 60*60*1000).toString());
@@ -183,10 +184,16 @@
             this.$echo.private('demo_balance.'+this.user.id).listen('ChangeDemoBalance', (payload) => {
               this.demo_balance = parseFloat(payload.balance).toFixed(2);
             });
-            setInterval(() => {
-                axios.post('/ping');
-            }, 30000);
+            this.$root.$on('account-balances:refresh', this.refreshBalances);
+            this.refreshBalances();
+            this.balanceRefreshInterval = setInterval(() => {
+                this.refreshBalances();
+            }, 10000);
 
+        },
+        beforeDestroy() {
+            clearInterval(this.balanceRefreshInterval);
+            this.$root.$off('account-balances:refresh', this.refreshBalances);
         },
         data: function() {
             return {
@@ -200,6 +207,7 @@
                 realButtonColor: '#FDAC41 !important',
                 contestButtonColor: '#5a8dee !important',
                 contests_echo: '',
+                balanceRefreshInterval: null,
             }
         },
         methods: {
@@ -216,11 +224,22 @@
             formatToPrice(value) {
                 return `${value.toFixed(2)} $`;
             },
+            refreshBalances() {
+              axios.post('/ping')
+                  .then(({data}) => {
+                    this.balance = parseFloat(data.balance).toFixed(2);
+                    this.demo_balance = parseFloat(data.demo_balance).toFixed(2);
+                  })
+                  .catch((error) => {
+                    console.error('Failed to refresh account balances.', error);
+                  });
+            },
             refillDemoBalance: function (){
               let self = this;
               axios.post('/data/demo/refill')
                   .then(function (response) {
                     if(response.data.success === true) {
+                      self.refreshBalances();
                       toastr.success(response.data.message, self.$i18n.t('header_success'), {
                         positionClass: 'toast-bottom-left',
                         containerId: 'toast-bottom-left'
@@ -232,14 +251,17 @@
                       });
                     }
                   });
+            },
+            updateAccountType(route) {
+              this.isReal = route.params.type == null;
+              this.isDemo = route.params.type === 'demo';
+              this.isContest = route.params.type === 'tournament';
+              this.contestId = route.params.trading_id != null ? route.params.trading_id : '0';
             }
         },
       watch:{
         $route (to, from){
-          this.isReal = this.$router.currentRoute.params.type == null;
-          this.isDemo = (this.$router.currentRoute.params.type != null ? this.$router.currentRoute.params.type : false) === 'demo';
-          this.isContest = (this.$router.currentRoute.params.type != null ? this.$router.currentRoute.params.type : false) === 'tournament';
-          this.contestId = this.$router.currentRoute.params.trading_id != null ? this.$router.currentRoute.params.trading_id : '0';
+          this.updateAccountType(to);
         },
         isContest: function(value){
           let self = this;

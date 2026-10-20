@@ -134,6 +134,7 @@
 
     // Controller binding social. networks.
     "social_email" => "The account you are trying to use does not have a verified email address",
+    "social_error" => "Something went wrong signing in with :provider. Please try again, or sign in with your Google account.",
 
     // Support controller
     "support_wait_10_minutes" => "You have already submitted a question within 10 minutes, please wait and try again!",

@@ -439,6 +439,9 @@ export default {
   directives: {
     currency: CurrencyDirective
   },
+  created() {
+    this.updateTradingRoute(this.$router.resolve(window.location.pathname).route, null);
+  },
   mounted() {
     this.localTV = new TradingViewFastWebsocket();
     setInterval(() => {
@@ -515,6 +518,14 @@ export default {
     });
   },
   methods: {
+    updateTradingRoute(to, from) {
+      this.isReal = to.params.type == null;
+      this.isDemo = to.params.type === 'demo';
+      this.isContest = to.params.type === 'tournament';
+      this.contestId = to.params.trading_id != null ? to.params.trading_id : '0';
+      this.historyLoaded = false;
+      this.setTradingType(to, from);
+    },
     clearLines() {
       if (this.lines.length > 0) {
         this.lines.forEach(element => {
@@ -644,6 +655,9 @@ export default {
         id: this.contestId != null ? this.contestId : 0,
       })
           .then(function (response) {
+            if (self.tradingType !== 'tournament') {
+              self.$root.$emit('account-balances:refresh');
+            }
             self.opened.unshift(response.data);
             let order = window.tvWidget.chart().createOrderLine()
                 .setText(text)
@@ -820,12 +834,7 @@ export default {
   },
   watch: {
     $route(to, from) {
-      this.isReal = this.$router.currentRoute.params.type == null;
-      this.isDemo = (this.$router.currentRoute.params.type != null ? this.$router.currentRoute.params.type : false) === 'demo';
-      this.isContest = (this.$router.currentRoute.params.type != null ? this.$router.currentRoute.params.type : false) === 'tournament';
-      this.contestId = this.$router.currentRoute.params.trading_id != null ? this.$router.currentRoute.params.trading_id : '0';
-      this.historyLoaded = false;
-      this.setTradingType(to, from);
+      this.updateTradingRoute(to, from);
     },
     hours: function () {
       let number = parseInt(this.hours);

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 class CreateTickQuotesTable extends Migration
@@ -12,6 +14,17 @@ class CreateTickQuotesTable extends Migration
      */
     public function up()
     {
+        if (empty(config('database.connections.bavix::clickhouse.host'))) {
+            Schema::create('tick_quotes', function (Blueprint $table) {
+                $table->string('symbol_id', 255);
+                $table->decimal('price', 20, 5);
+                $table->dateTime('created_at');
+                $table->index(['symbol_id', 'created_at']);
+            });
+
+            return;
+        }
+
         DB::connection('bavix::clickhouse')->statement('CREATE TABLE tick_quotes (
             symbol_id String(255),
             price Decimal(20,5),
@@ -32,6 +45,12 @@ class CreateTickQuotesTable extends Migration
      */
     public function down()
     {
-        DB::connection('clickhouse')->statement('DROP TABLE IF EXISTS tick_quotes');
+        if (empty(config('database.connections.bavix::clickhouse.host'))) {
+            Schema::dropIfExists('tick_quotes');
+
+            return;
+        }
+
+        DB::connection('bavix::clickhouse')->statement('DROP TABLE IF EXISTS tick_quotes');
     }
 }

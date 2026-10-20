@@ -14,6 +14,20 @@ class CreateQuotesTable extends Migration
      */
     public function up()
     {
+        if (empty(config('database.connections.bavix::clickhouse.host'))) {
+            Schema::create('quotes', function (Blueprint $table) {
+                $table->unsignedBigInteger('symbol_id');
+                $table->decimal('high', 10, 5);
+                $table->decimal('min', 10, 5);
+                $table->decimal('open', 10, 5);
+                $table->decimal('close', 10, 5);
+                $table->dateTime('created_at');
+                $table->index(['symbol_id', 'created_at']);
+            });
+
+            return;
+        }
+
         DB::connection('bavix::clickhouse')->statement('CREATE TABLE quotes (
             symbol_id UInt64,
             high Decimal(10,5),
@@ -37,6 +51,12 @@ class CreateQuotesTable extends Migration
      */
     public function down()
     {
-        DB::connection('clickhouse')->statement('DROP TABLE IF EXISTS quotes');
+        if (empty(config('database.connections.bavix::clickhouse.host'))) {
+            Schema::dropIfExists('quotes');
+
+            return;
+        }
+
+        DB::connection('bavix::clickhouse')->statement('DROP TABLE IF EXISTS quotes');
     }
 }

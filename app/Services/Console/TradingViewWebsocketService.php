@@ -168,7 +168,7 @@ class TradingViewWebsocketService
                             }
                         }
 
-                        if (isset($this->tickerData[$tickerName]['current_session']) && isset($this->tickerData[$tickerName]['original_name'])) {
+                        if (isset($tickerUpdate->current_session) && isset($this->tickerData[$tickerName]['original_name'])) {
                             $status = $this->tickerData[$tickerName]['current_session'];
                             $updated = Carbon::now()->format('Y-m-d H:i:s.u');
                             $symbol_id = $this->tickerData[$tickerName]['original_name'];

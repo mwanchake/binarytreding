@@ -10,4 +10,10 @@ return [
     'free_kassa_secret_2' => env('FREE_KASSA_SECRET_2'),
     'payeer_id' => env('PAYEER_ID'),
     'payeer_secret' => env('PAYEER_SECRET'),
+    'payhero_api_username' => env('PAYHERO_API_USERNAME'),
+    'payhero_api_password' => env('PAYHERO_API_PASSWORD'),
+    'payhero_channel_id' => env('PAYHERO_CHANNEL_ID'),
+    'exchange_markup_percent' => env('EXCHANGE_MARKUP_PERCENT', 2),
+    'exchange_rate_api_url' => env('EXCHANGE_RATE_API_URL', 'https://open.er-api.com/v6/latest/USD'),
+    'exchange_rate_ca_bundle' => env('EXCHANGE_RATE_CA_BUNDLE'),
 ];

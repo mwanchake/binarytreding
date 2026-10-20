@@ -134,6 +134,7 @@
 
    //Controlador de la unión de redes sociales.
    "social_email" => "La cuenta que está intentando utilizar no tiene una dirección de correo electrónico verificada",
+   "social_error" => "Se produjo un error al iniciar sesión con :provider. Inténtalo de nuevo o inicia sesión con tu cuenta de Google.",
 
    //Controlador de apoyo
    "support_wait_10_minutes" => "Ya has enviado una pregunta en 10 minutos, ¡espera e inténtalo de nuevo!",

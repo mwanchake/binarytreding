@@ -35,6 +35,7 @@ Route::get('/offer/{code}', 'Main\ReferralController@setReferralCookie');
 Route::get('/test', 'Main\TestController@test');
 Route::post('/payeer/status', 'Main\DepositController@processPayeer');
 Route::post('/freekassa/process', 'Main\DepositController@processFreeKassa');
+Route::post('/payhero/webhook', 'Main\DepositController@payHeroWebhook')->name('payhero.webhook');
 
 Route::middleware(['auth', 'cheat'])->group(function () {
   // Трейдинг
@@ -96,6 +97,7 @@ Route::middleware(['auth', 'cheat'])->group(function () {
   Route::post('/data/getAllDepositSystems', 'Main\DepositController@getAllDepositSystems');
   Route::post('/data/getDepositPromocodes', 'Main\PromocodeController@getDepositPromocodes');
   Route::post('/data/deposit', 'Main\DepositController@startDeposit');
+  Route::post('/data/payhero/deposit', 'Main\DepositController@initiatePayHeroDeposit');
   Route::post('/data/depositHistory', 'Main\DepositController@depositHistory');
   Route::post('/data/depositHistory/{id}', 'Main\DepositController@depositHistory')->middleware('admin');
   Route::post("/data/demo/refill", 'Main\TradingController@refillDemoBalance');

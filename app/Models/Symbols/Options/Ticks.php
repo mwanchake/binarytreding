@@ -2,9 +2,9 @@
 
 namespace App\Models\Symbols\Options;
 
-use Bavix\LaravelClickHouse\Database\Eloquent\Model;
+use App\Models\ClickHouseModel;
 
-class Ticks extends Model
+class Ticks extends ClickHouseModel
 {
     protected $primary_key = null;
     public $incrementing = false;

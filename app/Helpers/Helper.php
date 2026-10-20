@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Hash;
 class Helper
 {
   static public function checkMysqlConnection(){
+    if (config('database.default') === 'sqlite') {
+      return;
+    }
+
     while(true){
       try {
         if (DB::connection('mysql')->getPdo()) {

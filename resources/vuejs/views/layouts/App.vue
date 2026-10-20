@@ -14,12 +14,12 @@
         },
         data(){
           return {
-            showTradingPanel: false,
-          }
+            showTradingPanel: window.location.pathname.startsWith('/trading'),
+          };
         },
         watch: {
-          $route(to, from) {
-            this.showTradingPanel = this.$router.currentRoute.path.includes('/trading');
+          $route(to) {
+            this.showTradingPanel = to.path.startsWith('/trading');
           }
         }
     }
