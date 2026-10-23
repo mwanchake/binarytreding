@@ -46,10 +46,11 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
-    preDeployCommand: php artisan migrate --force
     envVars:
       - key: APP_ENV
         value: production
+      - key: RUN_MIGRATIONS
+        value: "true"
       - key: APP_DEBUG
         value: "false"
       - key: APP_KEY

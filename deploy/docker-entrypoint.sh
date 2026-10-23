@@ -14,6 +14,10 @@ mkdir -p \
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
+if [ "${RUN_MIGRATIONS:-false}" = "true" ]; then
+    php artisan migrate --force --database=pgsql
+fi
+
 if [ "${LARAVEL_CONFIG_CACHE:-true}" = "true" ]; then
     php artisan config:cache
 fi
