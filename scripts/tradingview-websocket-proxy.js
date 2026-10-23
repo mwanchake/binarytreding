@@ -2,7 +2,7 @@ const { WebSocket, WebSocketServer } = require('ws');
 const fs = require('fs');
 const path = require('path');
 
-const port = Number(process.env.TRADINGVIEW_PROXY_PORT || 8081);
+const port = Number(process.env.PORT || process.env.TRADINGVIEW_PROXY_PORT || 8081);
 const envPath = path.resolve(__dirname, '..', '.env');
 let envAppUrl;
 
@@ -15,12 +15,13 @@ if (fs.existsSync(envPath)) {
 const appUrl = new URL(process.env.APP_URL || envAppUrl || 'http://127.0.0.1:8000');
 const appPort = Number(process.env.APP_PORT || appUrl.port || (appUrl.protocol === 'https:' ? 443 : 80));
 const upstreamUrl = 'wss://data.tradingview.com/socket.io/websocket';
-const allowedOrigins = new Set(['127.0.0.1', 'localhost'].map((host) => {
+const allowedOrigins = new Set([appUrl.hostname, '127.0.0.1', 'localhost'].map((host) => {
     const origin = new URL(`${appUrl.protocol}//${host}`);
     origin.port = (appPort === 80 && appUrl.protocol === 'http:') ||
         (appPort === 443 && appUrl.protocol === 'https:') ? '' : String(appPort);
     return origin.origin;
 }));
+const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
 function closeSocket(socket, code, reason) {
     if (code === 1000 || (code >= 3000 && code <= 4999)) {
@@ -31,7 +32,7 @@ function closeSocket(socket, code, reason) {
 }
 
 const server = new WebSocketServer({
-    host: '127.0.0.1',
+    host,
     port,
     verifyClient: ({ origin }, callback) => {
         callback(allowedOrigins.has(origin), 403, 'Local development origin required');
@@ -39,7 +40,7 @@ const server = new WebSocketServer({
 });
 
 server.on('listening', () => {
-    console.log(`TradingView websocket relay listening on ws://127.0.0.1:${port}`);
+    console.log(`TradingView websocket relay listening on ws://${host}:${port}`);
 });
 
 server.on('connection', (client) => {

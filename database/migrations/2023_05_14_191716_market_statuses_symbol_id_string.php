@@ -13,11 +13,10 @@ class MarketStatusesSymbolIdString extends Migration
      */
     public function up()
     {
-        Schema::connection(config('database.default') === 'sqlite' ? null : 'mysql')
-            ->table('market_statuses', function (Blueprint $table) {
-                $table->dropColumn('id');
-                $table->string('symbol_id')->nullable()->change();
-            });
+        Schema::table('market_statuses', function (Blueprint $table) {
+            $table->dropColumn('id');
+            $table->string('symbol_id')->nullable()->change();
+        });
     }
 
     /**
@@ -27,10 +26,9 @@ class MarketStatusesSymbolIdString extends Migration
      */
     public function down()
     {
-        Schema::connection(config('database.default') === 'sqlite' ? null : 'mysql')
-            ->table('market_statuses', function (Blueprint $table) {
-                $table->integer('symbol_id')->nullable()->change();
-                $table->id();
-            });
+        Schema::table('market_statuses', function (Blueprint $table) {
+            $table->integer('symbol_id')->nullable()->change();
+            $table->id();
+        });
     }
 }

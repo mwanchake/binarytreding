@@ -15,7 +15,7 @@ class InstallCommandService {
 
     public function migrationsSeedersStarterSymbols()
     {
-        Helper::checkMysqlConnection();
+        Helper::checkDatabaseConnection();
         Artisan::call('migrate', ['--force' => true]);
         Symbol::truncate();
         Promocode::truncate();

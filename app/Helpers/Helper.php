@@ -13,31 +13,8 @@ use Illuminate\Support\Facades\Hash;
 
 class Helper
 {
-  static public function checkMysqlConnection(){
-    if (config('database.default') === 'sqlite') {
-      return;
-    }
-
-    while(true){
-      try {
-        if (DB::connection('mysql')->getPdo()) {
-          dump("Connection mysql successful!");
-          break;
-        }
-      } catch(\Exception $e) { }
-      dump("Wait mysql connection!");
-      sleep(1);
-    }
-    while(true){
-      try {
-        if (DB::connection('pgsql')->getPdo()) {
-          dump("Connection pgsql successful!");
-          break;
-        }
-      } catch(\Exception $e) { }
-      dump("Wait pgsql connection!");
-      sleep(1);
-    }
+  static public function checkDatabaseConnection(){
+    DB::connection()->getPdo();
   }
 
   static public function createPathForVerifyPhotos(){

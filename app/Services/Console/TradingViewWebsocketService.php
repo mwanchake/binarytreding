@@ -86,7 +86,7 @@ class TradingViewWebsocketService
 
     private function resetWebSocket()
     {
-        Helper::checkMysqlConnection();
+        Helper::checkDatabaseConnection();
         $this->startTime = microtime(true);
         $this->tickerData = [];
         $this->subscriptions = [];
@@ -203,7 +203,7 @@ class TradingViewWebsocketService
 
     private function resetHistoryWebSocket()
     {
-        Helper::checkMysqlConnection();
+        Helper::checkDatabaseConnection();
         $this->startTime = microtime(true);
         $this->tickerData = [];
         $this->subscriptions = [];

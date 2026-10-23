@@ -23,6 +23,9 @@ Route::middleware(['referer'])->group(function () {
 
 Route::get('login/{provider}', 'Main\SocialController@redirect');
 Route::get('lang/{lang}', 'Main\LocalizationController@setLang');
+Route::get('/healthz', function () {
+    return response()->json(['status' => 'ok']);
+});
 Route::get('login/{provider}/callback','Main\SocialController@Callback');
 Route::get('refresh-token', 'Main\TokenController@refreshToken');
 Route::post('/qiwi/process', 'Main\DepositController@qiwiProcess');

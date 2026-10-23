@@ -392,7 +392,7 @@ env-ci/
 
 ## Local Database Setup
 
-For local development without MySQL or ClickHouse, configure `DB_CONNECTION=sqlite` and point `DB_DATABASE` at a SQLite file, then run `php artisan migrate` and `php artisan install` to create the starter symbols and other initial application data. Market-status, quote, and tick models use SQLite in this mode. When a ClickHouse host is configured, quote and tick storage remains on ClickHouse; non-SQLite deployments keep market statuses on MySQL.
+For local development without MySQL or ClickHouse, configure `DB_CONNECTION=sqlite` and point `DB_DATABASE` at a SQLite file, then run `php artisan migrate` and `php artisan install` to create the starter symbols and other initial application data. Market-status, quote, and tick models use SQLite in this mode. When a ClickHouse host is configured, quote and tick storage remains on ClickHouse; market statuses use the configured default database connection.
 
 The trading chart also needs the local TradingView websocket relay. Set `WEBSOCKET_HOST=127.0.0.1:8081` and run `npm run dev:tradingview-proxy` in a separate terminal while developing locally. The relay reads the local app origin and port from `APP_URL` in `.env`; set `APP_PORT` only if you need to override that port. The relay only listens on loopback and accepts connections from the local app origin. To populate live market status and ticks used by trade controls, run `php artisan tradingview:start` in another terminal and keep it running; it connects directly to TradingView and requires internet access.
 
@@ -448,6 +448,23 @@ The operations dashboard is available at `/admin`. It includes permission-gated 
 The additive migration `2026_10_22_000001_create_admin_operations_tables` adds administrator permission records, audit logs, wallet-adjustment records, and the session-version column used to revoke sessions when blocking accounts. It has not been applied automatically. Back up the existing database and review the migration before running `php artisan migrate`; do not use `migrate:fresh` or reset the database. The existing financial tables and user records are retained.
 
 Manual wallet adjustments and bonus-cancellation balance changes write adjustment records and audit entries. This is not yet a platform-wide ledger for every legacy trading, deposit, referral, and contest balance mutation. Second-person approval thresholds for large withdrawals and manual adjustments are not implemented. Binance BEP20 deposit verification/account attribution and automated M-Pesa/Binance payouts also remain unavailable; do not mark a deposit or payout complete without independent provider verification.
+
+## Render Deployment with Docker and PostgreSQL
+
+The repository includes a Render Blueprint (`render.yaml`) and Docker images for the Laravel web app, Laravel Echo Server, and TradingView websocket relay. The Blueprint provisions PostgreSQL, Redis-compatible Render Key Value, the web service, and separate order-settlement, scheduler, quote-ingestion, Echo, and market-data services. Existing `docker-compose.yml` and `env-ci/` files remain for local/legacy deployments.
+
+1. Push this repository to GitHub and create a Render Blueprint from it. Choose the same Render region for the database and all services.
+2. Before the first deploy, set `APP_URL` on `binarytreding-web`, `binarytreding-realtime`, and `binarytreding-market-data` to the final HTTPS URL of the web service. The latter two use it for private-channel auth and WebSocket origin checks.
+3. Generate an application key with `php artisan key:generate --show`. Set the same `APP_KEY` on the web service and all Laravel worker services. Do not commit the key.
+4. Set `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY` on `binarytreding-web` to the full contents of the matching `storage/oauth-private.key` and `storage/oauth-public.key` files. If you do not have an existing key pair, create one once with `php artisan passport:keys` in a trusted environment. Keep the values private and stable across deploys; replacing them invalidates existing Passport tokens. For an existing deployment, reuse its current valid pair.
+5. Configure `PAYHERO_API_USERNAME`, `PAYHERO_API_PASSWORD`, and `PAYHERO_CHANNEL_ID` on the web service if M-Pesa deposits are enabled. Set `TRADINGVIEW_LOGIN` and `TRADINGVIEW_PASSWORD` on the quotes worker only if your TradingView connection requires credentials. Add mail and OAuth settings in the Render dashboard if those integrations are used.
+6. Deploy. The web service runs `php artisan migrate --force` as its pre-deploy command against the linked Render PostgreSQL database. Review migrations before deploying schema changes; do not run `php artisan install` in production because that command truncates and reseeds symbols and promocodes.
+
+The PHP image builds the Vue 2/Laravel Mix assets, installs the locked Composer dependencies, enables PostgreSQL PDO support, and serves Laravel's `public/` directory through Apache on Render's `PORT`. `/healthz` is the web health-check endpoint. Sessions, cache, broadcasting, and market-worker cache use the linked Key Value service; private Laravel Echo channels are authenticated by the web service. The separate TradingView websocket relay accepts only the configured app origin.
+
+Render's database is new and initially empty. Migrations create the schema; they do not copy existing MySQL data. Back up and plan a separate data migration before switching a live site. Market-status storage is now on the configured default database connection, so PostgreSQL deployments no longer need a second MySQL instance. Existing MySQL installations continue using their configured default connection.
+
+Render containers have ephemeral local storage. User-uploaded verification files or other runtime-generated files must use S3-compatible storage (configure `FILESYSTEM_DRIVER=s3` and the AWS environment variables) or an explicitly provisioned persistent disk; do not rely on files surviving a deploy. The Blueprint provisions paid database, Key Value, web, and worker services; review Render's current pricing and scale the plans to your workload before deployment.
 
 ## Notes
 
