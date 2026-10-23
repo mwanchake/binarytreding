@@ -72,6 +72,8 @@ services:
           type: keyvalue
           name: binarytreding-redis
           property: connectionString
+      - key: REDIS_CACHE_DB
+        value: "0"
       - key: CACHE_DRIVER
         value: redis
       - key: SESSION_DRIVER
@@ -126,6 +128,8 @@ services:
           type: keyvalue
           name: binarytreding-redis
           property: connectionString
+      - key: REDIS_CACHE_DB
+        value: "0"
       - key: CACHE_DRIVER
         value: redis
       - key: SESSION_DRIVER
@@ -162,6 +166,8 @@ services:
           type: keyvalue
           name: binarytreding-redis
           property: connectionString
+      - key: REDIS_CACHE_DB
+        value: "0"
       - key: CACHE_DRIVER
         value: redis
       - key: SESSION_DRIVER
@@ -198,6 +204,8 @@ services:
           type: keyvalue
           name: binarytreding-redis
           property: connectionString
+      - key: REDIS_CACHE_DB
+        value: "0"
       - key: CACHE_DRIVER
         value: redis
       - key: SESSION_DRIVER
