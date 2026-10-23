@@ -61,6 +61,12 @@ class DepositController extends Controller
         return response()->json($service['data'], $service['status']);
     }
 
+    public function payHeroDepositStatus($reference, DepositService $depositService)
+    {
+        $service = $depositService->payHeroDepositStatus($reference);
+        return response()->json($service['data'], $service['status']);
+    }
+
     public function payHeroWebhook(Request $request, DepositService $depositService)
     {
         try {

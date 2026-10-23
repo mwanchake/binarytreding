@@ -65,7 +65,7 @@ Vue.prototype.$datafeed = Datafeed;
 
 Vue.use(VueEcho, {
     broadcaster: 'socket.io',
-    host: window.location.hostname + ':6001',
+    host: (window.echoServerHost || window.location.hostname) + ':' + (window.echoServerPort || 6001),
     transports: ['websocket'],
     csrfToken: $('meta[name="csrf-token"]').attr('content')
 });
@@ -76,4 +76,3 @@ const app = new Vue({
     components: { App },
     router
 });
-

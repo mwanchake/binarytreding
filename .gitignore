@@ -18,6 +18,8 @@ npm-debug.log
 yarn-error.log
 .idea/
 laravel-echo-server.lock
+laravel-echo-server.local.json
+database/*.sqbpro
 app/Http/Controllers/Main/cookie.txt
 .env
 laravel-echo-server.json

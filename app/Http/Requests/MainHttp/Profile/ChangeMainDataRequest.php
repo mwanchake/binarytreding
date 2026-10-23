@@ -12,12 +12,13 @@ class ChangeMainDataRequest extends FormRequest
     public function rules()
     {
         $admin = false;
-        if($this->id && Helper::isAdmin()){
+        if($this->filled('id') && Helper::isAdmin()){
             $admin = true;
         }
 
         return [
             'id' => [new IdIfAdminRule],
+            'reason' => $admin ? 'required|string|min:10|max:1000' : 'nullable|string|max:1000',
             'name' => 'string|min:3|max:50'.$admin ? '|nullable' : '',
             'last_name' => 'string|min:3|max:50'.$admin ? '|nullable' : '',
             'patronymic' => 'string|min:3|max:50'.$admin ? '|nullable' : '',

@@ -184,7 +184,7 @@
                       </div>
                       <div class="col-4" style="padding-left:7.5px;padding-right:7.5px !important;">
                         <button @click="amountClickClose" type="button" class="btn btn-outline-success btn-sm w-100">
-                          ОК
+                          OK
                         </button>
                       </div>
                       <div class="col-4 pl-0">

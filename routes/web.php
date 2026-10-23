@@ -70,13 +70,10 @@ Route::middleware(['auth', 'cheat'])->group(function () {
   Route::post("/data/profile", 'Main\ProfileController@loadAllProfileData');
   Route::post("/data/profile/{id}", 'Main\ProfileController@loadAllProfileData')->middleware('admin');
   Route::post("/data/changePassword", 'Main\ProfileController@changePassword');
-  Route::post('/data/upload-additional','Main\ProfileController@additionalDocument');
   Route::post('/data/verifyPhone', 'Main\ProfileController@sendPhoneCode');
   Route::post('/data/checkPhoneCode', 'Main\ProfileController@approvePhone');
   Route::post('/data/verifyEmail', 'Main\ProfileController@sendEmailCode');
   Route::post('/data/checkEmailCode', 'Main\ProfileController@approveEmail');
-  Route::post('/data/sendPhoto', 'Main\ProfileController@passportFirstPage');
-  Route::post('/data/sendPhoto/{id}', 'Main\ProfileController@passportFirstPage')->middleware('admin');
   Route::post('/data/changeGeneralData', 'Main\ProfileController@changeGeneralData');
   Route::post('/data/changeGeneralData/{id}', 'Main\ProfileController@changeGeneralData')->middleware('admin');
   Route::post('/data/changeMainData', 'Main\ProfileController@changeMainData');
@@ -88,7 +85,10 @@ Route::middleware(['auth', 'cheat'])->group(function () {
   Route::post('/data/getAccountData', 'Main\WithdrawalController@getAccountData');
   Route::post('/data/discardBonus', 'Main\PromocodeController@discardBonus');
   Route::post('/data/processPayout', 'Main\WithdrawalController@processPayout');
+  Route::get('/data/withdrawal/options', 'Main\WithdrawalController@walletOptions');
+  Route::post('/data/withdrawal', 'Main\WithdrawalController@createWalletPayout');
   Route::post('/data/withdrawalHistory', 'Main\WithdrawalController@withdrawalHistory');
+  Route::get('/data/transactions', 'Main\TransactionHistoryController@index');
   Route::post('/data/getAccountData/{id}', 'Main\WithdrawalController@getAccountData')->middleware('admin');
   Route::post('/data/discardBonus/{id}', 'Main\PromocodeController@discardBonus')->middleware('admin');
   Route::post('/data/processPayout/{id}', 'Main\WithdrawalController@processPayout')->middleware('admin');
@@ -98,6 +98,7 @@ Route::middleware(['auth', 'cheat'])->group(function () {
   Route::post('/data/getDepositPromocodes', 'Main\PromocodeController@getDepositPromocodes');
   Route::post('/data/deposit', 'Main\DepositController@startDeposit');
   Route::post('/data/payhero/deposit', 'Main\DepositController@initiatePayHeroDeposit');
+  Route::get('/data/payhero/deposit/{reference}/status', 'Main\DepositController@payHeroDepositStatus');
   Route::post('/data/depositHistory', 'Main\DepositController@depositHistory');
   Route::post('/data/depositHistory/{id}', 'Main\DepositController@depositHistory')->middleware('admin');
   Route::post("/data/demo/refill", 'Main\TradingController@refillDemoBalance');
@@ -126,6 +127,20 @@ Route::middleware(['auth', 'cheat'])->group(function () {
   Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::get("image/{file}", 'Main\FileController@showImage');
     Route::prefix('data')->group(function () {
+      Route::get('operations/access', 'Admin\SuperAdminController@access');
+      Route::get('operations/dashboard', 'Admin\SuperAdminController@dashboard');
+      Route::get('operations/users', 'Admin\SuperAdminController@users');
+      Route::get('operations/users/{id}', 'Admin\SuperAdminController@userDetails')->where('id', '[0-9]+');
+      Route::post('operations/users', 'Admin\SuperAdminController@createUser');
+      Route::put('operations/users/{id}', 'Admin\SuperAdminController@updateUser')->where('id', '[0-9]+');
+      Route::post('operations/users/{id}/password-reset', 'Admin\SuperAdminController@resetUserPassword')->where('id', '[0-9]+')->middleware('throttle:3,1');
+      Route::post('operations/users/{id}/status', 'Admin\SuperAdminController@setUserStatus')->where('id', '[0-9]+');
+      Route::delete('operations/users/{id}', 'Admin\SuperAdminController@deleteUser')->where('id', '[0-9]+');
+      Route::get('operations/admins', 'Admin\SuperAdminController@adminAccounts');
+      Route::put('operations/admins/{id}', 'Admin\SuperAdminController@assignAdminRole')->where('id', '[0-9]+');
+      Route::get('operations/audit', 'Admin\SuperAdminController@auditLogs');
+      Route::get('operations/reports/financial', 'Admin\SuperAdminController@exportFinancialReport');
+      Route::post('operations/users/{id}/wallet-adjustments', 'Admin\SuperAdminController@adjustWallet')->where('id', '[0-9]+');
       Route::post('createPromocode', 'Admin\PromocodeController@createPromocode');
       Route::post('removePromocode', 'Admin\PromocodeController@removePromocode');
       Route::post('getAllPromocode', 'Admin\PromocodeController@getAllPromocode');
@@ -156,7 +171,7 @@ Route::middleware(['auth', 'cheat'])->group(function () {
       Route::post("history/demo/{id}", 'Admin\TradeHistoryController@getHistoryDemo');
       Route::post("updatePhone", 'Admin\UserController@updatePhone');
       Route::post("updateEmail", 'Admin\UserController@updateEmail');
-      Route::post("updatePassword", 'Admin\UserController@updatePassword');
+      Route::post("updatePassword", 'Admin\UserController@updatePassword')->middleware('throttle:3,1');
       Route::post("verifyAccount", 'Admin\VerifyController@verifyAccount');
       Route::post("unVerifyAccount", 'Admin\VerifyController@unVerifyAccount');
       Route::post("checkDocument", 'Admin\VerifyController@checkDocument');

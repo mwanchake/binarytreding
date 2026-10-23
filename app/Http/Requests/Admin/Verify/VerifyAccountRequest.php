@@ -10,7 +10,8 @@ class VerifyAccountRequest extends FormRequest
     public function rules()
     {
         return [
-            'id' => 'numeric|min:1'
+            'id' => 'numeric|min:1',
+            'reason' => 'required|string|min:10|max:1000',
         ];
     }
 }

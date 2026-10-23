@@ -31,6 +31,7 @@
     "landing_online" => "Online",
     "landing_profit" => "Profit",
     "landing_pairs" => "Steam",
+    "home" => "Home",
     "landing_how_to_start" => "How to start trading",
     "landing_three_stages" => "There are only three steps to get started",
     "landing_register_now" => "Register",

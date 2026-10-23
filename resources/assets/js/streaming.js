@@ -12,10 +12,13 @@ export function barsFromWebSocket(data){
 		return;
 	}
 	latestBar = data;
-	let key = Object.keys(data)[0];
-	let shortName = data[key].short_name;
-	const tradePrice = data[key].lp;
-	let tradeTime = Date.parse(data[key].last_update);
+	const ticker = `${window.symbolInfo.broker}:${window.symbolInfo.ticker.replace('/', '')}`;
+	const quote = data[ticker];
+	if (!quote || !Number.isFinite(Number(quote.lp))) {
+		return;
+	}
+	const tradePrice = Number(quote.lp);
+	let tradeTime = Date.parse(quote.last_update);
 	const channelString = `0~${window.symbolInfo.broker}~${window.symbolInfo.ticker.replace('/', '')}`;
 	latestchannelString = channelString;
 	const subscriptionItem = channelToSubscription.get(channelString);

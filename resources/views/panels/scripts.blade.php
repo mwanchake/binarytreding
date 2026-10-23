@@ -6,6 +6,8 @@
       } else {
           window.websocketAddress = 'ws://{{ config('custom.websocket_host') }}';
       }
+      window.echoServerHost = @json(config('services.echo.host'));
+      window.echoServerPort = @json((int) config('services.echo.port', 6001));
     </script>
     @yield('above-vendor-scripts')
     <script src="{{asset('vendors/js/vendors.min.js')}}"></script>

@@ -47,6 +47,10 @@ function getCookie(name) {
 	return matches ? decodeURIComponent(matches[1]) : undefined
 }
 
+function normalizeSymbolName(symbolName) {
+	return String(symbolName).replace(/\//g, '').toUpperCase();
+}
+
 async function getAllSymbols() {
 	const data = await makeApiRequest('data/symbols');
 	let allSymbols = [];
@@ -104,7 +108,7 @@ export default {
 		const symbols = await getAllSymbols();
 		const symbolItem = symbols.find(({
 			full_name,
-		}) => full_name.replace('/', '').toUpperCase() === symbolName.toUpperCase());
+		}) => normalizeSymbolName(full_name) === normalizeSymbolName(symbolName));
 
 		if (!symbolItem) {
 			//console.log('[resolveSymbol]: Cannot resolve symbol', symbolName);

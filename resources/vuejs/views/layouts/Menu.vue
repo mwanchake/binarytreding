@@ -80,6 +80,12 @@
                   <span class="menu-title">{{ $i18n.t('menu_withdrawal') }}</span>
                 </router-link>
               </li>
+              <li class="nav-item" :class="{'active' : this.$route.path === '/transactions'}">
+                <router-link :to="'/transactions'">
+                  <i class="menu-livicon" :data-icon="'list'"></i>
+                  <span class="menu-title">{{ $i18n.t('menu_transactions') }}</span>
+                </router-link>
+              </li>
               <li class="nav-item" :class="{'active' : this.$route.path === '/promocodes'}">
                 <router-link :to="'/promocodes'">
                   <i class="menu-livicon" :data-icon="'coins'"></i>

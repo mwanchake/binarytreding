@@ -94,6 +94,10 @@ export default {
                 text = '<span class="badge badge-success text-white">'+self.$i18n.t('admin_withdrawals_accepted')+'</span>';
               } else if(data == 2){
                 text = '<span class="badge badge-danger text-white">'+self.$i18n.t('admin_withdrawals_declined')+'</span>';
+              } else if(data == 3){
+                text = '<span class="badge badge-info text-white">'+self.$i18n.t('admin_withdrawals_processing')+'</span>';
+              } else if(data == 4){
+                text = '<span class="badge badge-warning text-white">'+self.$i18n.t('withdraw_wallet_failed')+'</span>';
               }
             }
             return text;

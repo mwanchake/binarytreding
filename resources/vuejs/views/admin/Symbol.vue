@@ -5,7 +5,7 @@
         <div class="col-md-12">
           <div class="card">
             <div class="card-header">
-              <h4 class="card-title">Добавление новой торговой пары</h4>
+              <h4 class="card-title">{{ $i18n.t('admin_symbol_add_title') }}</h4>
             </div>
             <div class="card-content">
               <div class="card-body">
@@ -47,24 +47,24 @@
                   </div>
 
                   <div class="col-md-2">
-                    <label><small><i>Минимальная экспирация в сек</i></small></label>
+                    <label><small><i>{{ $i18n.t('admin_symbol_min_expiration') }}</i></small></label>
                     <b-form-input v-bind:disabled="create_ajax" :id="'create_min_exp'" :type="'number'" min=5 v-model="min_expiration_time"></b-form-input>
                   </div>
 
                   <div class="col-md-2">
-                    <label><small><i>Мин % для тех анализа</i></small></label>
+                    <label><small><i>{{ $i18n.t('admin_symbol_min_technical') }}</i></small></label>
                     <input v-show="create_ajax" disabled="disabled" type="text" class="form-control">
                     <select2 v-show="!create_ajax" style="width: 100%" :id="'create_tech'" v-model="min_percent_tech" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value'}"/>
                   </div>
 
                   <div class="col-md-2">
-                    <label><small><i>Мин % для новостей</i></small></label>
+                    <label><small><i>{{ $i18n.t('admin_symbol_min_news') }}</i></small></label>
                     <input v-show="create_ajax" disabled="disabled" type="text" class="form-control">
                     <select2 v-show="!create_ajax" style="width: 100%" :id="'create_news'" v-model="min_percent_news" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value' }"/>
                   </div>
 
                   <div class="col-md-2">
-                    <label><small><i>Мин % для юзера</i></small></label>
+                    <label><small><i>{{ $i18n.t('admin_symbol_min_user') }}</i></small></label>
                     <input v-show="create_ajax" disabled="disabled" type="text" class="form-control">
                     <select2 v-show="!create_ajax" style="width: 100%" :id="'create_user'" v-model="min_percent_user" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value' }"/>
                   </div>
@@ -129,24 +129,24 @@
                     </div>
 
                     <div class="col-md-2">
-                      <label><small><i>Минимальная экспирация в сек</i></small></label>
+                      <label><small><i>{{ $i18n.t('admin_symbol_min_expiration') }}</i></small></label>
                       <b-form-input v-bind:disabled="ajax[symbol.symbol]" :id="'min_exp'+symbol.symbol" :type="'number'" min=5 v-model="symbol.min_expiration_time"></b-form-input>
                     </div>
 
                     <div class="col-md-2">
-                      <label><small><i>Мин % для тех анализа</i></small></label>
+                      <label><small><i>{{ $i18n.t('admin_symbol_min_technical') }}</i></small></label>
                       <input v-show="ajax[symbol.symbol]" disabled="disabled" type="text" class="form-control">
                       <select2 v-show="!ajax[symbol.symbol]" style="width: 100%" :id="'tech'+symbol.symbol" v-model="symbol.min_percent_tech" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value'}"/>
                     </div>
 
                     <div class="col-md-2">
-                      <label><small><i>Мин % для новостей</i></small></label>
+                      <label><small><i>{{ $i18n.t('admin_symbol_min_news') }}</i></small></label>
                       <input v-show="ajax[symbol.symbol]" disabled="disabled" type="text" class="form-control">
                       <select2 v-show="!ajax[symbol.symbol]" style="width: 100%" :id="'news'+symbol.symbol" v-model="symbol.min_percent_news" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value' }"/>
                     </div>
 
                     <div class="col-md-2">
-                      <label><small><i>Мин % для юзера</i></small></label>
+                      <label><small><i>{{ $i18n.t('admin_symbol_min_user') }}</i></small></label>
                       <input v-show="ajax[symbol.symbol]" disabled="disabled" type="text" class="form-control">
                       <select2 v-show="!ajax[symbol.symbol]" style="width: 100%" :id="'user'+symbol.symbol" v-model="symbol.min_percent_user" :options="resistance_options" :settings="{ settingOption: 'value', settingOption: 'value' }"/>
                     </div>
@@ -206,7 +206,7 @@ export default {
     for(let i=1; i<101; i++){
       this.percents_options.push({ id: i, text: i.toString()});
     }
-    this.resistance_options.push({ id: 0, text: 'Отключено'});
+    this.resistance_options.push({ id: 0, text: this.$i18n.t('admin_symbol_disabled')});
     for(let i=1; i<101; i++){
       this.resistance_options.push({ id: i, text: i.toString()});
     }
@@ -390,13 +390,13 @@ export default {
         { id: 1, text: this.$i18n.t('admin_symbol_settings_active_status') },
       ],
       min_percent_tech_options: [
-        { id: 0, text: 'Отключено' },
+        { id: 0, text: this.$i18n.t('admin_symbol_disabled') },
       ],
       min_percent_news_options: [
-        { id: 0, text: 'Отключено' },
+        { id: 0, text: this.$i18n.t('admin_symbol_disabled') },
       ],
       min_percent_user_options: [
-        { id: 0, text: 'Отключено' },
+        { id: 0, text: this.$i18n.t('admin_symbol_disabled') },
       ],
       time_options: [],
       percents_options: [],

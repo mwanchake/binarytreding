@@ -40,4 +40,8 @@ return [
       'client_secret' => env('GOOGLE_CLIENT_SECRET'),
       'redirect'      => env('GOOGLE_URL'),
     ],
+    'echo' => [
+      'host' => env('ECHO_SERVER_HOST'),
+      'port' => env('ECHO_SERVER_PORT', 6001),
+    ],
 ];

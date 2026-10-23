@@ -299,6 +299,24 @@ span {
 }
 
 @include media-breakpoint-down(xs) {
+    .content.app-content {
+        width: 100%;
+        min-width: 0;
+
+        .content-wrapper,
+        .content-body,
+        .content-area-wrapper {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .table-responsive {
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
     html body .content .content-wrapper {
         padding: calc(#{$content-padding} - 0.4rem)
             calc(#{$content-padding} - 1rem) 0;

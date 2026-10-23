@@ -10,8 +10,11 @@ class ChangeBalanceRequest extends FormRequest
     public function rules()
     {
         return [
-            'balance' => 'numeric|required',
-            'action' => 'numeric|required|min:0|max:2'
+            'balance' => ['required', 'numeric', 'gt:0', 'regex:/^\d+(\.\d{1,4})?$/'],
+            'action' => 'required|integer|in:0,1',
+            'reason' => 'required|string|min:10|max:1000',
+            'reference' => 'required|uuid',
+            'confirmation' => 'required|accepted',
         ];
     }
 }

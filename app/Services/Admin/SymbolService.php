@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\Symbol\GetSymbolRequest;
 use App\Http\Requests\Admin\Symbol\RemoveSymbolRequest;
 use App\Http\Requests\Admin\Symbol\SaveSymbolRequest;
 use App\Models\Symbols\Options\Symbol;
+use App\Models\AdminAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,7 +26,7 @@ class SymbolService
         }
         $exploded = explode('/', $request->pair);
         if(Symbol::where('symbol', $exploded[0].$exploded[1])->where('broker', $request->broker)->withTrashed()->count()){
-            return (['success' => false, 'message' => 'Такая торговая пара уже есть в системе!']);
+            return (['success' => false, 'message' => __('locale.admin_symbol_cannot_create')]);
         }
 
         Symbol::where('symbol', $exploded[0].$exploded[1])->where('broker', $request->broker)->update([
@@ -44,6 +45,10 @@ class SymbolService
             'min_percent_news' => $request->min_percent_news,
             'min_percent_user' => $request->min_percent_user,
         ]);
+        AdminAuditLog::record('trading.symbol_updated', 'Market parameters updated for '.$request->pair.'.', null, null, [
+            'symbol' => $exploded[0].$exploded[1],
+            'broker' => $request->broker,
+        ]);
         return (['success' => true, 'message' => __('locale.admin_symbols_updated')]);
     }
 
@@ -59,8 +64,14 @@ class SymbolService
             return (['success' => false, 'message' => __('locale.demo_error')]);
         }
 
+        $symbol = Symbol::where('symbol', $request->id)->where('broker', $request->broker)->first();
         Symbol::where('symbol', $request->id)->where('broker', $request->broker)->delete();
         Cache::forever('market_update', true);
+        AdminAuditLog::record('trading.symbol_removed', 'Market symbol removed by an authorized administrator.', null, null, [
+            'symbol' => $request->id,
+            'broker' => $request->broker,
+            'found' => (bool) $symbol,
+        ]);
         return (['success' => true, 'message' => __('locale.admin_symbols_deleted')]);
     }
 
@@ -72,7 +83,7 @@ class SymbolService
         $exploded = explode('/', $request->pair);
 
         if(Symbol::where('symbol', $exploded[0].$exploded[1])->where('broker', $request->broker)->withTrashed()->count()){
-            return (['success' => false, 'message' => 'Такая торговая пара уже есть в системе!']);
+            return (['success' => false, 'message' => __('locale.admin_symbol_cannot_create')]);
         }
 
         $model = new Symbol();
@@ -94,6 +105,10 @@ class SymbolService
         $model->min_percent_user = $request->min_percent_user;
         $model->save();
         Cache::forever('market_update', true);
+        AdminAuditLog::record('trading.symbol_created', 'Market symbol created for '.$request->pair.'.', null, null, [
+            'symbol' => $model->symbol,
+            'broker' => $model->broker,
+        ]);
         return (['success' => true, 'message' => __('locale.admin_symbols_created'), 'created' => $model]);
     }
 }

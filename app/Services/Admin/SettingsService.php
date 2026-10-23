@@ -2,7 +2,7 @@
 
 namespace App\Services\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Models\AdminAuditLog;
 use Illuminate\Http\Request;
 use Jackiedo\DotenvEditor\Facades\DotenvEditor;
 
@@ -19,6 +19,11 @@ class SettingsService
         } else {
             $keys = DotenvEditor::getKeys();
         }
+        foreach ($keys as $key => $value) {
+            if ($this->isSensitiveKey($key)) {
+                unset($keys[$key]);
+            }
+        }
         return $keys;
     }
 
@@ -30,10 +35,25 @@ class SettingsService
         DotenvEditor::autoBackup(false);
         $result = null;
         parse_str($request->data, $result);
+        $availableKeys = DotenvEditor::getKeys();
+        $changedKeys = [];
         foreach ($result as $key => $value) {
+            if (!array_key_exists($key, $availableKeys) || $this->isSensitiveKey($key) || !is_scalar($value)) {
+                continue;
+            }
             DotenvEditor::setKey($key, $value, '', false);
+            $changedKeys[] = $key;
+        }
+        if (!$changedKeys) {
+            return ['success' => false, 'message' => 'No permitted settings were provided.'];
         }
         DotenvEditor::save();
+        AdminAuditLog::record('configuration.updated', $request->reason, null, null, ['keys' => $changedKeys]);
         return (['success' => true, 'message' => __('locale.admin_settings_success')]);
+    }
+
+    private function isSensitiveKey($key)
+    {
+        return preg_match('/secret|password|token|private|credential|(^|_)key($|_)/i', $key) === 1;
     }
 }

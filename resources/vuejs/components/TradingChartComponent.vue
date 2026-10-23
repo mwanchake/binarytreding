@@ -6,12 +6,12 @@
     <div v-show="showError" class="alert alert-warning alert-dismissible mb-2" role="alert" style="margin-top: -84px;margin-left: 150px;margin-right: 150px;">
 
       <button onclick="location.reload()" type="button" class="close btn btn-light-danger btn-sm" style="font-size: 15px;top: 10px;padding: 10px;margin-right: 10px;">
-        Переподключиться
+        {{ $i18n.t('chart_reconnect') }}
       </button>
       <div class="d-flex align-items-center">
         <i class="bx bx-error-circle"></i>
         <span>
-          <strong>Ошибка соединения!</strong>
+          <strong>{{ $i18n.t('chart_connection_error') }}</strong>
         </span>
       </div>
     </div>
@@ -79,7 +79,7 @@
                         window.tvWidget.onChartReady(() => {
                             window.tvWidget.headerReady().then(() => {
                                 window.button = window.tvWidget.createButton();
-                                window.button.setAttribute('title', 'Выбрать символ для торговли');
+                                window.button.setAttribute('title', self.$i18n.t('chart_select_symbol'));
                                 window.button.classList.add('apply-common-tooltip');
                                 window.button.classList.add('button-symbol-get');
                                 window.button.addEventListener('click', () => window.tvWidget.chart().executeActionById('symbolSearch'));

@@ -35,15 +35,15 @@ export class TradingViewFastWebsocket {
 
     onclose(event) {
         if (event.wasClean) {
-            console.log('Соединение закрыто чисто');
+            console.log('Connection closed cleanly.');
         } else {
-            console.log('Обрыв соединения'); // например, "убит" процесс сервера
+            console.log('Connection lost.');
         }
-        console.log('Код: ' + event.code + ' причина: ' + event.reason);
+        console.log('Code: ' + event.code + ', reason: ' + event.reason);
     }
 
     onerror(error) {
-        console.log("Ошибка " + error.message);
+        console.log("WebSocket error: " + error.message);
     }
 
     extractSymbol(tticker) {

@@ -287,23 +287,23 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body">
-                                <div class="row">
+                                <div v-if="!isAdmin" class="row">
                                     <div class="col-md-4">
                                         <fieldset class="form-group">
                                             <label>{{ $i18n.t('profile_current_password') }}</label>
-                                            <input type="text" class="form-control" v-model="current_password">
+                                            <input type="password" autocomplete="current-password" class="form-control" v-model="current_password">
                                         </fieldset>
                                     </div>
                                     <div class="col-md-4">
                                         <fieldset class="form-group">
                                             <label>{{ $i18n.t('profile_new_password') }}</label>
-                                            <input type="text" class="form-control" v-model="new_password">
+                                            <input type="password" autocomplete="new-password" class="form-control" v-model="new_password">
                                         </fieldset>
                                     </div>
                                     <div class="col-md-4">
                                         <fieldset class="form-group">
                                             <label>{{ $i18n.t('profile_repeat_new_password') }}</label>
-                                            <input type="text" class="form-control" v-model="repeat_password">
+                                            <input type="password" autocomplete="new-password" class="form-control" v-model="repeat_password">
                                         </fieldset>
                                     </div>
                                     <div class="col-md-8">
@@ -316,17 +316,32 @@
                                         <button type="button" @click="clearPassword" class="btn btn-outline-danger float-right mr-1">{{ $i18n.t('profile_clear') }}</button>
                                     </div>
                                 </div>
+                                <div v-else class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <p class="mb-1 mr-1">{{ $i18n.t('superadmin_password_reset_notice') }}</p>
+                                    <button type="button" @click="changePassword" class="btn btn-outline-primary" :disabled="passwordResetSending">
+                                        {{ $i18n.t('superadmin_password_reset') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div v-show="!user_verify_at" class="alert bg-rgba-warning mb-2" role="alert">
+            <div v-if="profileLoaded && !user_verify_at && !personalDataSubmitted" class="alert bg-rgba-warning mb-2" role="alert">
               <div class="d-flex align-items-center">
                 <i class="bx bx-error-circle"></i>
                 <span>
                   {{ $i18n.t('profile_dont_verified') }}
+                </span>
+              </div>
+            </div>
+
+            <div v-else-if="profileLoaded && !user_verify_at && personalDataSubmitted" class="alert bg-rgba-info mb-2" role="alert">
+              <div class="d-flex align-items-center">
+                <i class="bx bx-info-circle"></i>
+                <span>
+                  {{ $i18n.t('profile_pending_review') }}
                 </span>
               </div>
             </div>
@@ -341,6 +356,18 @@
             </div>
 
             <div v-for="value in main_error" class="alert bg-rgba-danger alert-dismissible mb-2" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+                <div class="d-flex align-items-center">
+                    <i class="bx bx-error"></i>
+                    <span>
+                      {{ value }}
+                    </span>
+                </div>
+            </div>
+
+            <div v-for="value in main_request_error" class="alert bg-rgba-danger alert-dismissible mb-2" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
@@ -368,7 +395,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">{{ $i18n.t('profile_main') }} <small><i>({{ $i18n.t('profile_from_document') }})</i></small></h4>
+                            <h4 class="card-title">{{ $i18n.t('profile_main') }}</h4>
                         </div>
                         <div class="card-content">
                             <div class="card-body">
@@ -426,31 +453,7 @@
                 </div>
             </div>
 
-            <div v-for="value in fileError" class="alert bg-rgba-danger alert-dismissible mb-2" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-                <div class="d-flex align-items-center">
-                    <i class="bx bx-error"></i>
-                    <span>
-                          {{ value }}
-                        </span>
-                </div>
-            </div>
-
-            <div v-for="value in fileSuccess" class="alert bg-rgba-success alert-dismissible mb-2" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-                <div class="d-flex align-items-center">
-                    <i class="bx bx-error"></i>
-                    <span>
-                          {{ value }}
-                        </span>
-                </div>
-            </div>
-
-            <div class="row">
+            <div v-if="isAdmin" class="row">
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
@@ -458,16 +461,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body">
-                                <div v-show="firstDocumentLoading" class="alert bg-rgba-warning mb-0 alert-paddings" role="alert">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bx bx-info-circle"></i>
-                                        <span>
-                                          {{ $i18n.t('profile_uploading') }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div v-show="document_first_page && !document_first_page_verify_at && !firstDocumentLoading" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
+                                <div v-show="document_first_page && !document_first_page_verify_at" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
                                     <div class="d-flex align-items-center">
                                         <i class="bx bx-info-circle"></i>
                                         <span>
@@ -492,7 +486,7 @@
                                     </a>
                                   </div>
                                   <div class="col-md-12 mt-1">
-                                    <textarea placeholder="Комментарий для пользователя..." class="form-control" style="height: 100px;" v-model="comment_first"></textarea>
+                                    <textarea :placeholder="$i18n.t('profile_user_comment_placeholder')" class="form-control" style="height: 100px;" v-model="comment_first"></textarea>
                                   </div>
                                   <div class="col-md-4 mt-1">
                                     <button @click="actionVerify(comment_first, 0, 1)" type="button" class="btn btn-outline-warning w-100">{{ $i18n.t('profile_decline') }}</button>
@@ -505,11 +499,6 @@
                                   </div>
                                 </div>
 
-                                <fieldset v-show="!document_first_page && !document_first_page_verify_at">
-                                    <div class="input-group">
-                                        <b-form-file accept="image/jpg, image/jpeg, image/png, image/gif" v-on:change="firstUpload" v-model="document_first_page" :state="Boolean(document_first_page)" :placeholder="$i18n.t('profile_select_image')" :drop-placeholder="$i18n.t('profile_move_file')"></b-form-file>
-                                    </div>
-                                </fieldset>
                             </div>
                         </div>
                     </div>
@@ -521,16 +510,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body">
-                                <div v-show="secondDocumentLoading" class="alert bg-rgba-warning mb-0 alert-paddings" role="alert">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bx bx-info-circle"></i>
-                                        <span>
-                                          {{ $i18n.t('profile_uploading') }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div v-show="document_second_page && !document_second_page_verify_at && !secondDocumentLoading" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
+                                <div v-show="document_second_page && !document_second_page_verify_at" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
                                     <div class="d-flex align-items-center">
                                         <i class="bx bx-info-circle"></i>
                                         <span>
@@ -555,7 +535,7 @@
                                     </a>
                                   </div>
                                   <div class="col-md-12 mt-1">
-                                    <textarea placeholder="Комментарий для пользователя..." class="form-control" style="height: 100px;" v-model="comment_second"></textarea>
+                                    <textarea :placeholder="$i18n.t('profile_user_comment_placeholder')" class="form-control" style="height: 100px;" v-model="comment_second"></textarea>
                                   </div>
                                   <div class="col-md-4 mt-1">
                                     <button @click="actionVerify(comment_second, 0, 2)" type="button" class="btn btn-outline-warning w-100">{{ $i18n.t('profile_decline') }}</button>
@@ -568,11 +548,6 @@
                                   </div>
                                 </div>
 
-                                <fieldset v-show="!document_second_page && !document_second_page_verify_at">
-                                    <div class="input-group">
-                                        <b-form-file accept="image/jpg, image/jpeg, image/png, image/gif" v-on:change="secondUpload" v-model="document_second_page" :state="Boolean(document_second_page)" :placeholder="$i18n.t('profile_select_image')" :drop-placeholder="$i18n.t('profile_move_file')"></b-form-file>
-                                    </div>
-                                </fieldset>
                             </div>
                         </div>
                     </div>
@@ -584,16 +559,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body">
-                                <div v-show="additionalDocumentLoading" class="alert bg-rgba-warning mb-0 alert-paddings" role="alert">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bx bx-info-circle"></i>
-                                        <span>
-                                          {{ $i18n.t('profile_uploading') }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div v-show="document_additional && !document_additional_verify_at && !additionalDocumentLoading" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
+                                <div v-show="document_additional && !document_additional_verify_at" class="alert bg-rgba-primary mb-0 alert-paddings" role="alert">
                                     <div class="d-flex align-items-center">
                                         <i class="bx bx-info-circle"></i>
                                         <span>
@@ -618,7 +584,7 @@
                                     </a>
                                   </div>
                                   <div class="col-md-12 mt-1">
-                                    <textarea placeholder="Комментарий для пользователя..." class="form-control" style="height: 100px;" v-model="comment_third"></textarea>
+                                    <textarea :placeholder="$i18n.t('profile_user_comment_placeholder')" class="form-control" style="height: 100px;" v-model="comment_third"></textarea>
                                   </div>
                                   <div class="col-md-4 mt-1">
                                     <button @click="actionVerify(comment_third, 0, 3)" type="button" class="btn btn-outline-warning w-100">{{ $i18n.t('profile_decline') }}</button>
@@ -631,11 +597,6 @@
                                   </div>
                                 </div>
 
-                                <fieldset v-show="!document_additional && !document_additional_verify_at">
-                                    <div class="input-group">
-                                        <b-form-file accept="image/jpg, image/jpeg, image/png, image/gif" v-on:change="additionalUpload" v-model="document_additional" :state="Boolean(document_additional)" :placeholder="$i18n.t('profile_select_image')" :drop-placeholder="$i18n.t('profile_move_file')"></b-form-file>
-                                    </div>
-                                </fieldset>
                             </div>
                         </div>
                     </div>
@@ -659,11 +620,17 @@
         methods: {
             actionVerify: function(message, status, page){ // 0 - отклонить без удаления файлов, 1 - подтвердить, 2 - удалить
               let self = this;
+              let reason = '';
+              if (this.isAdmin) {
+                reason = window.prompt(this.$i18n.t('admin_action_reason'));
+                if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+              }
               axios.post('/admin/data/checkDocument', {
                 id: self.userId,
                 comment: message,
                 status: status,
-                page: page
+                page: page,
+                reason: reason.trim()
               }).then((response) => {
                 if(response.data.success === true) {
                   toastr.success(response.data.message, self.$i18n.t('profile_success'), {
@@ -678,70 +645,6 @@
                   });
                 }
               });
-            },
-            sendDocument: function (event, page){
-                this.fileError = [];
-                this.fileSuccess = [];
-                let formData = new FormData();
-                formData.append('file', event.target.files[0]);
-                formData.append('page', page);
-                let self = this;
-                if(page === '1'){
-                    this.firstDocumentLoading = true;
-                } else if (page === '2') {
-                    this.secondDocumentLoading = true;
-                } else if (page === '3') {
-                    this.additionalDocumentLoading = true;
-                }
-
-                axios.post( this.isAdmin ? '/data/sendPhoto/'+this.userId : '/data/sendPhoto', formData, { headers: { 'Content-Type': 'multipart/form-data' }})
-                    .then(function(response){
-                        let page = response.data.page;
-                        if(response.data.success === true) {
-                            self.fileSuccess.push(response.data.message);
-                            if(page === '1'){
-                                self.firstDocumentLoading = false;
-                            } else if (page === '2') {
-                                self.secondDocumentLoading = false;
-                            } else if (page === '3') {
-                                self.additionalDocumentLoading = false;
-                            }
-                            self.getProfile();
-                        } else {
-                            self.fileError.push(response.data.message);
-                            if(page === '1'){
-                                self.document_first_page = null;
-                                self.firstDocumentLoading = false;
-                            } else if (page === '2') {
-                                self.document_second_page = null;
-                                self.secondDocumentLoading = false;
-                            } else if (page === '3') {
-                                self.document_additional = null;
-                                self.additionalDocumentLoading = false;
-                            }
-                        }
-                    }).catch(function(error){
-                      self.fileError = error.response.data.errors.file;
-                      if(page === '1'){
-                        self.document_first_page = null;
-                        self.firstDocumentLoading = false;
-                      } else if (page === '2') {
-                        self.document_second_page = null;
-                        self.secondDocumentLoading = false;
-                      } else if (page === '3') {
-                        self.document_additional = null;
-                        self.additionalDocumentLoading = false;
-                      }
-                    });
-            },
-            firstUpload: function(event){
-                this.sendDocument(event, '1');
-            },
-            secondUpload: function(event){
-                this.sendDocument(event, '2');
-            },
-            additionalUpload: function(event){
-                this.sendDocument(event, '3');
             },
             getProfile: function(){
                 let self = this;
@@ -773,10 +676,16 @@
                         self.document_additional_verify_at = response.data.profile.document_additional_verify_at;
                         self.user_verify_at = response.data.profile.user_verify_at;
                         self.provider = response.data.provider;
+                        self.personalDataSubmitted = self.hasCompletePersonalData(response.data.profile);
+                        self.profileLoaded = true;
                     });
             },
             changePassword: function () {
                 let self = this;
+                if (this.isAdmin) {
+                  if (this.passwordResetSending) return;
+                  this.passwordResetSending = true;
+                }
                 let url = '/data/changePassword';
                 let data = {
                   old_password: self.current_password,
@@ -786,7 +695,6 @@
                 if(this.isAdmin){
                   url = '/admin/data/updatePassword';
                   data = {
-                    password: self.new_password,
                     id: this.$route.params.id
                   };
                 }
@@ -798,7 +706,13 @@
                     } else {
                         self.password_error.push(response.data.message);
                     }
-                })
+                }).catch(function (error) {
+                    self.password_error = [error.response && error.response.data && error.response.data.message
+                        ? error.response.data.message
+                        : self.$i18n.t('superadmin_error')];
+                }).finally(function () {
+                    self.passwordResetSending = false;
+                });
             },
             saveGeneral: function(){
                 let self = this;
@@ -806,7 +720,14 @@
                 if(this.isAdmin){
                   url = '/data/changeGeneralData/'+this.$route.params.id;
                 }
+                let reason = '';
+                if (this.isAdmin) {
+                  reason = window.prompt(this.$i18n.t('admin_action_reason'));
+                  if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+                }
                 axios.post(url, {
+                    id: this.isAdmin ? this.$route.params.id : undefined,
+                    reason: reason.trim(),
                     nickname: self.nickname,
                     telegram: self.telegram,
                     gender: self.gender,
@@ -823,7 +744,14 @@
             },
             saveMain: function(){
                 let self = this;
+                let reason = '';
+                if (this.isAdmin) {
+                  reason = window.prompt(this.$i18n.t('admin_action_reason'));
+                  if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+                }
                 axios.post(this.isAdmin ? '/data/changeMainData/'+this.userId : '/data/changeMainData', {
+                    id: this.isAdmin ? this.userId : undefined,
+                    reason: reason.trim(),
                     name: self.name,
                     last_name: self.last_name,
                     patronymic: self.patronymic,
@@ -831,14 +759,36 @@
                     document_number: self.document_number,
                     birth: self.birth
                 }).then(function (response) {
-                    self.main_error = [];
+                    self.main_request_error = [];
                     self.main_success = [];
                     if(response.data.success === true) {
                         self.main_success.push(response.data.message);
+                        self.getProfile();
                     } else {
-                        self.main_error.push(response.data.message);
+                        self.main_request_error.push(response.data.message);
+                    }
+                }).catch(function (error) {
+                    self.main_request_error = [];
+                    const data = error.response && error.response.data;
+                    if (data && data.errors) {
+                        self.main_request_error = Object.keys(data.errors).reduce(function (messages, key) {
+                            return messages.concat(data.errors[key]);
+                        }, []);
+                    } else {
+                        self.main_request_error.push(data && data.message ? data.message : self.$i18n.t('profile_save_failed'));
                     }
                 })
+            },
+            hasCompletePersonalData: function (profile) {
+                return Boolean(
+                    profile &&
+                    profile.name && profile.name.length >= 3 &&
+                    profile.last_name && profile.last_name.length >= 3 &&
+                    profile.patronymic && profile.patronymic.length >= 3 &&
+                    profile.address && profile.address.length >= 10 &&
+                    profile.document_number && profile.document_number.length >= 3 &&
+                    profile.birth && /^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(dateformat(profile.birth, 'dd-mm-yyyy'))
+                );
             },
             clearPassword: function () {
                 this.current_password = '';
@@ -904,7 +854,9 @@
             },
             verifyAccount: function (){
               let self = this;
-              axios.post('/admin/data/verifyAccount', { id: this.$route.params.id }).then((response) => {
+              let reason = window.prompt(this.$i18n.t('admin_action_reason'));
+              if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+              axios.post('/admin/data/verifyAccount', { id: this.$route.params.id, reason: reason.trim() }).then((response) => {
                 if(response.data.success === true) {
                   toastr.success(response.data.message, self.$i18n.t('profile_success'), {
                     positionClass: 'toast-bottom-left',
@@ -920,7 +872,9 @@
               });
             },
             updatePhone: function (){
-              axios.post('/admin/data/updatePhone', { phone: this.phone, id: this.$route.params.id }).then((response) => {
+              let reason = window.prompt(this.$i18n.t('admin_action_reason'));
+              if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+              axios.post('/admin/data/updatePhone', { phone: this.phone, id: this.$route.params.id, reason: reason.trim() }).then((response) => {
                 if(response.data.success === true) {
                   toastr.success(response.data.message, self.$i18n.t('profile_success'), {
                     positionClass: 'toast-bottom-left',
@@ -935,7 +889,9 @@
               });
             },
             updateEmail: function (){
-              axios.post('/admin/data/updateEmail', { email: this.email, id: this.$route.params.id }).then((response) => {
+              let reason = window.prompt(this.$i18n.t('admin_action_reason'));
+              if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+              axios.post('/admin/data/updateEmail', { email: this.email, id: this.$route.params.id, reason: reason.trim() }).then((response) => {
                 if(response.data.success === true) {
                   toastr.success(response.data.message, self.$i18n.t('profile_success'), {
                     positionClass: 'toast-bottom-left',
@@ -994,6 +950,7 @@
                 current_password: '',
                 new_password: '',
                 repeat_password: '',
+                passwordResetSending: false,
                 phoneCodeEnabled: true,
                 emailCodeEnabled: true,
                 phoneTime: true,
@@ -1012,14 +969,12 @@
                 ],
                 phoneCode: '',
                 emailCode: '',
-                fileError: [],
-                fileSuccess: [],
-                firstDocumentLoading: false,
-                secondDocumentLoading: false,
-                additionalDocumentLoading: false,
                 main_success: [],
                 general_success: [],
                 password_success: [],
+                main_request_error: [],
+                personalDataSubmitted: false,
+                profileLoaded: false,
                 user_verify_at: null,
                 provider: [],
                 comment_first: '',
@@ -1068,9 +1023,6 @@
                 }
                 return this.document_first_page_verify_at || this.document_second_page_verify_at || this.document_additional_verify_at || this.document_first_page || this.document_second_page || this.document_additional;
             },
-            documentsLoading: function (){
-                return this.firstDocumentLoading && this.secondDocumentLoading && this.additionalDocumentLoading;
-            },
             password_error: function () { // Проверка блокировать ли поля личных данных
                 let errors = [];
                 if(this.current_password.length > 0 && this.current_password.length < 6 && !this.isAdmin){
@@ -1092,7 +1044,7 @@
             },
             passwordSaveDisabled: function () {
                 if(this.isAdmin){
-                  return this.new_password.length < 8 || this.repeat_password.length < 8 || this.new_password !== this.repeat_password;
+                  return this.passwordResetSending;
                 } else {
                   return this.current_password.length < 6 || this.new_password.length < 8 || this.repeat_password.length < 8 || this.new_password !== this.repeat_password || this.current_password === this.new_password && this.current_password.length >= 6 && this.new_password.length >= 8;
                 }

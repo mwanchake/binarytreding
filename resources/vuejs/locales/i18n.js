@@ -12,9 +12,11 @@ let messages = {
     ru : russian,
 }
 window.locales = Object.keys(messages);
+const savedLocale = getCookie('currentLanguage');
+const locale = Object.prototype.hasOwnProperty.call(messages, savedLocale) ? savedLocale : 'en';
 
 export default new VueI18n({
-    locale: getCookie('currentLanguage') ? getCookie('currentLanguage') : 'en',
+    locale,
     fallbackLocale: 'en',
     messages
 })

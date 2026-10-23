@@ -9,13 +9,10 @@ use App\Http\Requests\MainHttp\Profile\ChangeGeneralDataRequest;
 use App\Http\Requests\MainHttp\Profile\ChangeMainDataRequest;
 use App\Http\Requests\MainHttp\Profile\ChangePasswordRequest;
 use App\Http\Requests\MainHttp\Profile\LoadAllProfileDataRequest;
-use App\Http\Requests\MainHttp\Profile\PassportFirstPageRequest;
 use App\Http\Requests\MainHttp\Profile\SendEmailCodeRequest;
 use App\Http\Requests\MainHttp\Profile\SendPhoneCodeRequest;
 use App\Models\EmailAttempts;
 use App\Http\Controllers\Controller;
-use App\Models\Models\File;
-use App\Models\Models\VerifyRequest;
 use App\Models\Profile;
 use App\Models\PhoneAttempts;
 use App\Models\Referral;
@@ -90,12 +87,6 @@ class ProfileController extends Controller
   public function approveEmail(ApproveEmailRequest $request, ProfileService $profileService)
   {
       return response()->json($profileService->approveEmailServ($request));
-  }
-
-  // Загрузка фото документа
-  public function passportFirstPage(PassportFirstPageRequest $request, ProfileService $profileService)
-  {
-      return response()->json($profileService->passportFirstPageServ($request));
   }
 
   public function logout(Request $request, ProfileService $profileService)

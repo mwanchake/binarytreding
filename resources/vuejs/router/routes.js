@@ -14,6 +14,7 @@ const Profile = () => import("../views/user/Profile");
 const Deposit = () => import("../views/user/Deposit");
 const History = () => import("../views/user/TradeHistory");
 const Withdrawal = () => import("../views/user/Withdrawal");
+const Transactions = () => import("../views/user/Transactions");
 const Support = () => import("../views/user/Support");
 const Partner = () => import("../views/user/Partner");
 const Contest = () => import("../views/user/Contest");
@@ -29,6 +30,7 @@ export const routes = [
     { path: '/trading/:type?/:trading_id?', name: i18n.t('menu_trading'), component: Empty, meta: { icon: 'desktop', hideFooter: true, hide: true } },
     { path: '/deposit', name: i18n.t('menu_deposit'), component: Deposit, meta: { icon: 'bank', badge : '50% OFF' } },
     { path: '/withdrawal', name: i18n.t('menu_withdrawal'), component: Withdrawal, meta: { icon: 'coins' } },
+    { path: '/transactions', name: i18n.t('menu_transactions'), component: Transactions, meta: { icon: 'list' } },
     { path: '/promocodes', name: i18n.t('menu_promo_codes'), component: Promocode, meta: { icon: 'bulb' } },
     { path: '/tournaments', name: i18n.t('tournament_list'), component: Contest, meta: { icon: 'bulb' } },
     { path: '/tournament/:tournament_id', name: i18n.t('tournament_info'), component: ContestInfo, meta: { icon: 'bulb', hide: true } },

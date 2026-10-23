@@ -13,7 +13,8 @@ class CheckDocumentRequest extends FormRequest
             'id' => 'numeric|min:1',
             'status' => 'numeric|min:0|max:2',
             'comment' => 'string|nullable',
-            'page' => 'numeric|min:1|max:3'
+            'page' => 'numeric|min:1|max:3',
+            'reason' => 'required|string|min:10|max:1000',
         ];
     }
 }

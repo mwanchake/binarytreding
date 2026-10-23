@@ -12,9 +12,15 @@
             </div>
             <div class="card-content">
               <div class="card-body">
+                <p v-if="'profile' in info && info.profile.user_verify_at" class="text-success">
+                  {{ $i18n.t('admin_control_account_active') }}
+                </p>
+                <p v-else-if="'profile' in info" class="text-warning">
+                  {{ $i18n.t('admin_control_account_inactive') }}
+                </p>
                 <div class="row">
                   <div class="col-md-6">
-                    <button v-bind:disabled="'profile' in info && info.profile.user_verify_at || !('profile' in info)" @click="verifyClick" type="button" class="btn btn-outline-success w-100">{{ $i18n.t('admin_control_verify_user_action') }}</button>
+                    <button v-bind:disabled="'profile' in info && info.profile.user_verify_at || !('profile' in info)" @click="verifyClick" type="button" class="btn btn-outline-success w-100">{{ $i18n.t('admin_control_activate_account') }}</button>
                   </div>
                   <div class="col-md-6">
                     <button v-bind:disabled="'profile' in info && !info.profile.user_verify_at || !('profile' in info)" @click="unVerifyClick" type="button" class="btn btn-outline-danger w-100">{{ $i18n.t('admin_control_take_off_verify') }}</button>
@@ -100,7 +106,9 @@ export default {
   methods: {
     verifyClick: function (){
       let self = this;
-      axios.post('/admin/data/verifyAccount', { id: this.$route.params.id }).then((response) => {
+      let reason = window.prompt(this.$i18n.t('admin_action_reason'));
+      if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+      axios.post('/admin/data/verifyAccount', { id: this.$route.params.id, reason: reason.trim() }).then((response) => {
         if(response.data.success === true) {
           toastr.success(response.data.message, self.$i18n.t('profile_success'), {
             positionClass: 'toast-bottom-left',
@@ -117,7 +125,9 @@ export default {
     },
     unVerifyClick: function (){
       let self = this;
-      axios.post('/admin/data/unVerifyAccount', { id: this.$route.params.id }).then((response) => {
+      let reason = window.prompt(this.$i18n.t('admin_action_reason'));
+      if (!reason || reason.trim().length < 10 || !window.confirm(this.$i18n.t('admin_confirm_action'))) return;
+      axios.post('/admin/data/unVerifyAccount', { id: this.$route.params.id, reason: reason.trim() }).then((response) => {
         if(response.data.success === true) {
           toastr.success(response.data.message, self.$i18n.t('profile_success'), {
             positionClass: 'toast-bottom-left',

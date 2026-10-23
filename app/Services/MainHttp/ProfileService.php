@@ -9,13 +9,11 @@ use App\Http\Requests\MainHttp\Profile\ChangeGeneralDataRequest;
 use App\Http\Requests\MainHttp\Profile\ChangeMainDataRequest;
 use App\Http\Requests\MainHttp\Profile\ChangePasswordRequest;
 use App\Http\Requests\MainHttp\Profile\LoadAllProfileDataRequest;
-use App\Http\Requests\MainHttp\Profile\PassportFirstPageRequest;
 use App\Http\Requests\MainHttp\Profile\SendEmailCodeRequest;
 use App\Http\Requests\MainHttp\Profile\SendPhoneCodeRequest;
 use App\Models\EmailAttempts;
+use App\Models\AdminAuditLog;
 use App\Http\Controllers\Controller;
-use App\Models\Models\File;
-use App\Models\Models\VerifyRequest;
 use App\Models\Profile;
 use App\Models\PhoneAttempts;
 use App\Models\Referral;
@@ -51,19 +49,39 @@ class ProfileService
     // Изменение основных данных
     public function changeGeneralDataServ(ChangeGeneralDataRequest $request){
         $id = Auth::user()->id;
+        $admin = false;
         if($request->id && Helper::isAdmin()){
             if(config('custom.demo')){
                 return (['success' => false, 'message' => __('locale.demo_error')]);
             }
             $id = $request->id;
+            $admin = true;
         }
 
+        $before = [
+            'name' => User::where('id', $id)->value('name'),
+            'telegram' => Profile::where('user_id', $id)->value('telegram'),
+            'gender' => Profile::where('user_id', $id)->value('gender'),
+            'language' => Profile::where('user_id', $id)->value('language'),
+        ];
         User::where('id', $id)->update(['name' => $request->nickname]);
         ProFile::where('user_id', $id)->update([
             'telegram' => $request->telegram,
             'gender' => $request->gender,
             'language' => $request->language
         ]);
+        if ($admin) {
+            AdminAuditLog::record('user.profile_updated', $request->reason, $id, null, [
+                'section' => 'general',
+                'before' => $before,
+                'after' => [
+                    'name' => $request->nickname,
+                    'telegram' => $request->telegram,
+                    'gender' => $request->gender,
+                    'language' => $request->language,
+                ],
+            ]);
+        }
         return (['data' => ['success' => true, 'message' => __('locale.profile_data_updated')], 'status' => 200]);
     }
 
@@ -79,6 +97,7 @@ class ProfileService
 
         $id = $admin ? $request->id : Auth::user()->id;
         $profile = Profile::where('user_id', $id)->first();
+        $before = $profile ? $profile->only(['name', 'last_name', 'patronymic', 'birth', 'address', 'document_number']) : [];
         if(($profile->document_first_page or $profile->document_first_page_verify_at or $profile->document_second_page or $profile->document_second_page_verify_at or $profile->document_additional or $profile->document_document_additional_verify_at) and $admin){
             return (['data' => ['success' => false, 'message' => __('locale.profile_cant_update_because_already')], 'status' => 200]);
         }
@@ -90,6 +109,20 @@ class ProfileService
             'address' => $request->address,
             'document_number' => $request->document_number,
         ]);
+        if ($admin) {
+            AdminAuditLog::record('user.profile_updated', $request->reason, $id, null, [
+                'section' => 'personal',
+                'before' => $before,
+                'after' => [
+                    'name' => $request->name,
+                    'last_name' => $request->last_name,
+                    'patronymic' => $request->patronymic,
+                    'birth' => $request->birth,
+                    'address' => $request->address,
+                    'document_number' => $request->document_number,
+                ],
+            ]);
+        }
         return (['data' => ['success' => true, 'message' => __('locale.profile_main_data_updated')], 'status' => 200]);
     }
 
@@ -250,46 +283,6 @@ class ProfileService
         } else {
             return (['success' => false, 'message' => __('locale.profile_email_code_wrong')]);
         }
-    }
-
-    // Загрузка фото документа
-    public function passportFirstPageServ(PassportFirstPageRequest $request){
-
-        $admin = false;
-        if($request->id && Helper::isAdmin()){
-            if(config('custom.demo')){
-                return (['success' => false, 'message' => __('locale.demo_error')]);
-            }
-            $admin = true;
-        }
-        $id = $admin ? $request->id : Auth::user()->id;
-        $pages = ['1' => 'document_first_page', '2' => 'document_second_page', '3' => 'document_additional'];
-        $profile = Profile::where('user_id', $id)->first();
-        if(!$profile->name or !$profile->last_name or !$profile->patronymic or !$profile->birth or !$profile->address or !$profile->document_number){
-            return (['success' => false, 'message' => __('locale.profile_before_upload_fill_data'), 'page' => $request->page]);
-        }
-        $tableDocument = $profile->{$pages[$request->page]};
-        $tableVerify = $profile->{$pages[$request->page].'_verify_at'};
-        if($tableDocument or $tableVerify){
-            return (['success' => false, 'message' => __('locale.profile_document_already_checking'), 'page' => $request->page]);
-        }
-        try {
-            $path = Helper::createPathForVerifyPhotos();
-            $fileName = time() . '_' . $request->file->getClientOriginalName();
-            $filePath = 'storage/app/'.$request->file('file')->storeAs($path, $fileName);
-            $model = new File();
-            $model->user_id = Auth::user()->id;
-            $model->path = $filePath;
-            $model->save();
-            Profile::where('user_id', $id)->update([$pages[$request->page] => $model->id]);
-        } catch (\Exception $ex){
-            return (['success' => false, 'message' => __('locale.profile_error_with_save_file'), 'page' => $request->page]);
-        }
-        $model = new VerifyRequest();
-        $model->user_id = $id;
-        $model->page = $request->page;
-        $model->save();
-        return (['success' => true, 'message' => __('locale.profile_file_send_to_approve'), 'page' => $request->page]);
     }
 
     public function logoutServ(Request $request){

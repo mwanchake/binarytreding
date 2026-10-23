@@ -42,6 +42,7 @@
                       </fieldset>
                     </div>
                     <div class="col-md-12">
+                      <input v-model.trim="reason" class="form-control mb-1" maxlength="1000" :placeholder="$i18n.t('admin_action_reason')">
                       <button type="button" @click="save" class="btn btn-outline-primary float-right">{{ $i18n.t('admin_settings_main_settings') }}</button>
                     </div>
                   </div>
@@ -66,7 +67,8 @@ export default {
       settingsErrors: [],
       settingsSuccess: [],
       settings: {},
-      allInputs: []
+      allInputs: [],
+      reason: ''
     }
   },
   methods: {
@@ -82,7 +84,8 @@ export default {
       this.settingsSuccess = [];
       let serialized = $('#settingsForm').serialize();
       let self = this;
-      axios.post('/admin/data/settings/save', { data: serialized }).then((response) => {
+      if (!self.reason || self.reason.length < 10 || !window.confirm(self.$i18n.t('admin_confirm_action'))) return;
+      axios.post('/admin/data/settings/save', { data: serialized, reason: self.reason }).then((response) => {
         if(response.data.success === false) {
           self.settingsErrors = [];
           self.settingsErrors.push(response.data.message);
@@ -92,6 +95,7 @@ export default {
         }
         $('html, body').animate({scrollTop : 0},1000);
         self.getSettings();
+        self.reason = '';
       });
     }
   }

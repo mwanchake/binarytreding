@@ -23,35 +23,41 @@
         <li class="nav-item" :class="{'active' : this.$route.path === '/admin'}">
           <router-link :to="'/admin'">
             <i class="menu-livicon" :data-icon="'desktop'"></i>
+            <span class="menu-title">{{ $i18n.t('superadmin_title') }}</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-if="hasPermission('dashboard.view')" :class="{'active' : this.$route.path === '/admin/statistics'}">
+          <router-link :to="'/admin/statistics'">
+            <i class="menu-livicon" :data-icon="'bar-chart'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_stat') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/settings'}">
+        <li class="nav-item" v-if="hasPermission('config.manage')" :class="{'active' : this.$route.path === '/admin/settings'}">
           <router-link :to="'/admin/settings'">
             <i class="menu-livicon" :data-icon="'gear'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_settings') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/deposit/systems'}">
+        <li class="nav-item" v-if="hasPermission('config.manage')" :class="{'active' : this.$route.path === '/admin/deposit/systems'}">
           <router-link :to="'/admin/deposit/systems'">
             <i class="menu-livicon" :data-icon="'plus'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_deposit_systems') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/withdraw/systems'}">
+        <li class="nav-item" v-if="hasPermission('config.manage')" :class="{'active' : this.$route.path === '/admin/withdraw/systems'}">
           <router-link :to="'/admin/withdraw/systems'">
             <i class="menu-livicon" :data-icon="'minus'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_withdraw_systems') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/symbols'}">
+        <li class="nav-item" v-if="hasPermission('trading.view')" :class="{'active' : this.$route.path === '/admin/symbols'}">
           <router-link :to="'/admin/symbols'">
             <i class="menu-livicon" :data-icon="'british-pound'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_quotes') }}</span>
           </router-link>
         </li>
 
-        <li class="nav-item has-sub" :class="{'sidebar-group-active open' : this.$route.path === '/admin/contests' || this.$route.path === '/admin/contest/create'}">
+        <li class="nav-item has-sub" v-if="hasPermission('trading.view')" :class="{'sidebar-group-active open' : this.$route.path === '/admin/contests' || this.$route.path === '/admin/contest/create'}">
           <a href="#" onclick="return false;">
             <i class="menu-livicon" :data-icon="'user'"></i>
             <span class="menu-title">{{ $i18n.t('tournament_list_of_tournaments') }}</span>
@@ -72,7 +78,7 @@
           </ul>
         </li>
 
-        <li id="contestTabs" v-show="this.$route.path.includes('admin/contest') && this.$route.path !== '/admin/contest/create'  && this.$route.path !== '/admin/contests'" class="nav-item open-collapsible" :class="{'has-sub sidebar-group-active open' : this.$route.path.includes('admin/contest') && this.$route.path !== '/admin/contest/create'}">
+        <li id="contestTabs" v-if="hasPermission('trading.view')" v-show="this.$route.path.includes('admin/contest') && this.$route.path !== '/admin/contest/create'  && this.$route.path !== '/admin/contests'" class="nav-item open-collapsible" :class="{'has-sub sidebar-group-active open' : this.$route.path.includes('admin/contest') && this.$route.path !== '/admin/contest/create'}">
           <a href="#" onclick="return false;">
             <i class="menu-livicon" :data-icon="'user'"></i>
             <span class="menu-title">{{ $i18n.t('tournament_only') }}</span>
@@ -100,7 +106,7 @@
         </li>
 
 <!--        Пользователь-->
-        <li v-show="this.$route.path.includes('admin/user')" class="nav-item open-collapsible" :class="{'has-sub sidebar-group-active open' : this.$route.path.includes('admin/user')}">
+        <li v-if="hasPermission('users.view')" v-show="this.$route.path.includes('admin/user')" class="nav-item open-collapsible" :class="{'has-sub sidebar-group-active open' : this.$route.path.includes('admin/user')}">
           <router-link :to="'/admin/user/profile/'+this.$route.params.id">
             <i class="menu-livicon" :data-icon="'user'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_user') }}</span>
@@ -163,37 +169,37 @@
           </ul>
         </li>
 <!--        Конец Пользователь-->
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/promocodes'}">
+        <li class="nav-item" v-if="hasPermission('config.manage')" :class="{'active' : this.$route.path === '/admin/promocodes'}">
           <router-link :to="'/admin/promocodes'">
             <i class="menu-livicon" :data-icon="'gift'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_promocodes') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/deposit'}">
+        <li class="nav-item" v-if="hasPermission('finance.deposits.view')" :class="{'active' : this.$route.path === '/admin/deposit'}">
           <router-link :to="'/admin/deposit'">
             <i class="menu-livicon" :data-icon="'bank'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_deposits') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/withdrawal'}">
+        <li class="nav-item" v-if="hasPermission('finance.withdrawals.view')" :class="{'active' : this.$route.path === '/admin/withdrawal'}">
           <router-link :to="'/admin/withdrawal'">
             <i class="menu-livicon" :data-icon="'coins'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_withdraws') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/partner'}">
+        <li class="nav-item" v-if="hasPermission('referrals.view')" :class="{'active' : this.$route.path === '/admin/partner'}">
           <router-link :to="'/admin/partner'">
             <i class="menu-livicon" :data-icon="'diagram'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_requests') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/verify'}">
+        <li class="nav-item" v-if="hasPermission('users.manage')" :class="{'active' : this.$route.path === '/admin/verify'}">
           <router-link :to="'/admin/verify'">
             <i class="menu-livicon" :data-icon="'bulb'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_verify') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" :class="{'active' : this.$route.path === '/admin/history'}">
+        <li class="nav-item" v-if="hasPermission('trading.view')" :class="{'active' : this.$route.path === '/admin/history'}">
           <router-link :to="'/admin/history'">
             <i class="menu-livicon" :data-icon="'coins'"></i>
             <span class="menu-title">{{ $i18n.t('admin_menu_trading_history') }}</span>
@@ -214,7 +220,18 @@
 export default {
   name: "Menu",
   props: ['logo_url', 'icon_url'],
+  data: function () {
+    return { permissions: [] };
+  },
+  mounted: function () {
+    axios.get('/admin/data/operations/access').then((response) => {
+      this.permissions = response.data.permissions || [];
+    });
+  },
   methods: {
+    hasPermission(permission) {
+      return this.permissions.indexOf(permission) !== -1;
+    },
     checkVisible(href, hide, route){
       return true;
       if(!hide){

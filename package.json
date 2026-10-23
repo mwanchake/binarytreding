@@ -6,7 +6,8 @@
         "watch-poll": "mix watch -- --watch-options-poll=1000",
         "hot": "mix watch --hot",
         "production": "mix --production",
-        "dev:tradingview-proxy": "node scripts/tradingview-websocket-proxy.js"
+        "dev:tradingview-proxy": "node scripts/tradingview-websocket-proxy.js",
+        "dev:echo-server": "laravel-echo-server start --config=laravel-echo-server.local.json"
     },
     "devDependencies": {
         "@babel/plugin-proposal-class-properties": "^7.10.4",
@@ -35,6 +36,7 @@
         "laravel-echo": "^1.8.1",
         "laravel-echo-server": "^1.6.2",
         "md5": "^2.3.0",
+        "qrcode": "^1.5.4",
         "requirejs": "^2.3.6",
         "rtlcss": "^2.6.0",
         "socket.io-client": "^2.3.0",

@@ -10,8 +10,9 @@ class UpdateEmailRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|string',
-            'id' => 'numeric|min:1'
+            'email' => 'required|email|max:191|unique:users,email,'.$this->input('id'),
+            'id' => 'required|integer|min:1',
+            'reason' => 'required|string|min:10|max:1000',
         ];
     }
 }

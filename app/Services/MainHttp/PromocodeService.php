@@ -9,6 +9,8 @@ use App\Http\Requests\MainHttp\Promocode\CheckPromocodeRequest;
 use App\Http\Requests\MainHttp\Promocode\DiscardBonusRequest;
 use App\Http\Requests\MainHttp\Promocode\PromocodeHistoryRequest;
 use App\Models\Deposit;
+use App\Models\AdminAuditLog;
+use App\Models\AdminWalletAdjustment;
 use App\Models\LatestOrder;
 use App\Models\OpenOrders;
 use App\Models\Promocode;
@@ -18,6 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
 class PromocodeService
@@ -93,29 +96,65 @@ class PromocodeService
     }
 
     public function discardBonusServ(DiscardBonusRequest $request){
-        $admin = false;
-        if($request->id && Helper::isAdmin()){
+        $admin = (bool) $request->id && Helper::isAdmin();
+        if($admin){
             if(config('custom.demo')){
                 return (['success' => false, 'message' => __('locale.demo_error')]);
             }
-            $admin = true;
         }
         $id = $admin ? $request->id : Auth::user()->id;
-        $user = $admin ? User::where('id', $id)->first() : Auth::user();
-        if(OpenOrders::where('user_id', $id)->count()){
-            return (['data' => ['success' => false, 'message' => __('locale.promo_code_you_have_open_orders')], 'status' => 200]);
+        $result = DB::transaction(function () use ($request, $admin, $id) {
+            $user = User::whereKey($id)->lockForUpdate()->firstOrFail();
+            if(OpenOrders::where('user_id', $id)->count()){
+                return ['data' => ['success' => false, 'message' => __('locale.promo_code_you_have_open_orders')], 'status' => 200];
+            }
+            if($user->left_turnover == 0 or $user->all_turnover <= 0){
+                return ['data' => ['success' => false, 'message' => __('locale.promo_code_you_dont_have_bonuses')], 'status' => 200];
+            }
+
+            $before = round((float) $user->balance, 4);
+            $percentToPayout = 1 - ($user->left_turnover / $user->all_turnover);
+            $newBalance = max(0, round($before + ($user->bonus * $percentToPayout) - $user->bonus, 4));
+            $amount = round(abs($newBalance - $before), 4);
+            $reference = (string) Str::uuid();
+            $user->bonus = 0;
+            $user->all_turnover = 0;
+            $user->left_turnover = 0;
+            $user->balance = $newBalance;
+            $user->save();
+
+            if ($amount > 0) {
+                $adjustment = new AdminWalletAdjustment();
+                $adjustment->reference = $reference;
+                $adjustment->user_id = $user->id;
+                $adjustment->actor_user_id = Auth::id();
+                $adjustment->action = $newBalance >= $before ? 'credit' : 'debit';
+                $adjustment->amount = $amount;
+                $adjustment->balance_before = $before;
+                $adjustment->balance_after = $newBalance;
+                $adjustment->reason = $admin ? $request->reason : 'User-initiated bonus cancellation.';
+                $adjustment->save();
+            }
+
+            if ($admin) {
+                AdminAuditLog::record('wallet.bonus_discarded', $request->reason, $user->id, $reference, [
+                    'balance_before' => $before,
+                    'balance_after' => $newBalance,
+                    'amount' => $amount,
+                ]);
+            }
+
+            return [
+                'data' => ['success' => true, 'message' => __('locale.promo_code_bonus_decline')],
+                'status' => 200,
+                'balance' => $newBalance,
+                'user' => $user,
+            ];
+        });
+        if (isset($result['user'])) {
+            broadcast(new ChangeBalance($result['balance'], $result['user']));
         }
-        if($user->left_turnover == 0 or $user->all_turnover <= 0){
-            return (['data' => ['success' => false, 'message' => __('locale.promo_code_you_dont_have_bonuses')], 'status' => 200]);
-        }
-        $percent_to_payout = 1 - ($user->left_turnover / $user->all_turnover); // Сколько процентов отработано
-        $add_to_balance = $user->bonus * $percent_to_payout - $user->bonus;
-        $set_balance = $user->balance + $add_to_balance;
-        if($set_balance <= 0){
-            $set_balance = 0;
-        }
-        User::where('id', $id)->update(['bonus' => 0, 'all_turnover' => 0, 'left_turnover' => 0, 'balance' => $set_balance]);
-        broadcast(new ChangeBalance($user->balance+$add_to_balance, $user));
-        return (['data' => ['success' => true, 'message' => __('locale.promo_code_bonus_decline')], 'status' => 200]);
+        unset($result['balance'], $result['user']);
+        return $result;
     }
 }

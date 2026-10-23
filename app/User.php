@@ -18,8 +18,8 @@ class User extends Authenticatable
 
     public function sendPasswordResetNotification($token){
       $mail_data = [
-        'headline' => 'Восстановление пароля',
-        'subtitle' =>  'Запрошено восстановление пароля от вашего аккаунта',
+        'headline' => 'Password reset',
+        'subtitle' =>  'A password reset was requested for your account.',
         'text' => '<p>Hello! You are receiving this email because we received a password reset request for your account. This password reset link will expire in 60 minutes.</p>',
         'image' => 'user-reset-password.png',
         'button_link' => route('password.reset', ['token' => $token, 'email' => $this->email]),
@@ -29,7 +29,7 @@ class User extends Authenticatable
       {
         $message->from(config('mail.username'), config('app.name'));
         $message->replyTo(config('mail.username'));
-        $message->subject('Восстановление пароля');
+        $message->subject('Password reset');
         $message->to($this->email);
       });
     }

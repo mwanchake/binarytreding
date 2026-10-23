@@ -1,0 +1,138 @@
+{
+  "processing": "Processing...",
+  "lengthMenu": "Show _MENU_ entries",
+  "zeroRecords": "No matching records found",
+  "emptyTable": "No data available in table",
+  "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+  "infoEmpty": "Showing 0 to 0 of 0 entries",
+  "infoFiltered": "(filtered from _MAX_ total entries)",
+  "search": "Search:",
+  "infoThousands": ",",
+  "loadingRecords": "Loading...",
+  "paginate": {
+    "first": "First",
+    "last": "Last",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "aria": {
+    "sortAscending": ": activate to sort column ascending",
+    "sortDescending": ": activate to sort column descending"
+  },
+  "buttons": {
+    "copy": "Copy",
+    "colvis": "Column visibility",
+    "collection": "Collection",
+    "colvisRestore": "Restore visibility",
+    "copyKeys": "Press Ctrl or Command + C to copy the table data to the system clipboard. To cancel, click this message or press Escape.",
+    "copySuccess": {
+      "1": "Copied 1 row to clipboard",
+      "_": "Copied %d rows to clipboard"
+    },
+    "copyTitle": "Copy to clipboard",
+    "csv": "CSV",
+    "excel": "Excel",
+    "pageLength": {
+      "-1": "Show all rows",
+      "1": "Show 1 row",
+      "_": "Show %d rows"
+    },
+    "pdf": "PDF",
+    "print": "Print"
+  },
+  "autoFill": {
+    "cancel": "Cancel",
+    "fill": "Fill all cells with <i>%d</i>",
+    "fillHorizontal": "Fill cells horizontally",
+    "fillVertical": "Fill cells vertically"
+  },
+  "decimal": ".",
+  "searchBuilder": {
+    "add": "Add condition",
+    "button": {
+      "0": "Search builder",
+      "_": "Search builder (%d)"
+    },
+    "clearAll": "Clear all",
+    "condition": "Condition",
+    "conditions": {
+      "date": {
+        "after": "After",
+        "before": "Before",
+        "between": "Between",
+        "empty": "Empty",
+        "equals": "Equals",
+        "not": "Not",
+        "notBetween": "Not between",
+        "notEmpty": "Not empty"
+      },
+      "number": {
+        "between": "Between",
+        "empty": "Empty",
+        "equals": "Equals",
+        "gt": "Greater than",
+        "gte": "Greater than or equal to",
+        "lt": "Less than",
+        "lte": "Less than or equal to",
+        "not": "Not",
+        "notBetween": "Not between",
+        "notEmpty": "Not empty"
+      },
+      "string": {
+        "contains": "Contains",
+        "empty": "Empty",
+        "endsWith": "Ends with",
+        "equals": "Equals",
+        "not": "Not",
+        "notEmpty": "Not empty",
+        "startsWith": "Starts with"
+      }
+    },
+    "data": "Data",
+    "deleteTitle": "Delete filtering rule",
+    "leftTitle": "Outdent criteria",
+    "logicAnd": "And",
+    "logicOr": "Or",
+    "rightTitle": "Indent criteria",
+    "title": {
+      "0": "Search builder",
+      "_": "Search builder (%d)"
+    },
+    "value": "Value"
+  },
+  "searchPanes": {
+    "clearMessage": "Clear all",
+    "collapse": {
+      "0": "Search panes",
+      "_": "Search panes (%d)"
+    },
+    "count": "{total}",
+    "countFiltered": "{shown} ({total})",
+    "emptyPanes": "No search panes",
+    "loadMessage": "Loading search panes",
+    "title": "Active filters - %d"
+  },
+  "select": {
+    "1": "%d row selected",
+    "_": "%d rows selected",
+    "cells": {
+      "1": "1 cell selected",
+      "_": "%d cells selected"
+    },
+    "columns": {
+      "1": "1 column selected",
+      "_": "%d columns selected"
+    },
+    "rows": {
+      "0": "Click a row to select it",
+      "1": "1 row selected",
+      "_": "%d rows selected"
+    }
+  },
+  "thousands": ",",
+  "datetime": {
+    "previous": "Previous",
+    "next": "Next",
+    "hours": "Hours"
+  }
+}

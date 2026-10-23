@@ -33,7 +33,7 @@ class PayHeroService
                 'provider' => 'm-pesa',
                 'external_reference' => $deposit->reference,
                 'customer_name' => $deposit->user->name,
-                'callback_url' => route('payhero.webhook'),
+                'callback_url' => config('deposit.payhero_callback_url') ?: route('payhero.webhook'),
             ]);
 
         $data = $response->json();
@@ -89,6 +89,7 @@ class PayHeroService
         $callbackAmount = data_get($response, 'Amount', data_get($payload, 'Amount'));
         $callbackStatus = data_get($response, 'Status', data_get($payload, 'Status'));
         $checkoutRequestId = data_get($response, 'CheckoutRequestID', data_get($payload, 'CheckoutRequestID'));
+        $mpesaReceiptNumber = data_get($response, 'MpesaReceiptNumber', data_get($payload, 'MpesaReceiptNumber'));
 
         if (!is_string($externalReference) || $externalReference === '' || !is_numeric($callbackAmount)) {
             throw new RuntimeException('PayHero callback is missing the deposit reference or amount.');
@@ -110,15 +111,53 @@ class PayHeroService
             throw new RuntimeException('The PayHero callback does not match the pending STK request.');
         }
 
-        if (!$deposit->gateway_reference) {
-            throw new RuntimeException('The PayHero deposit is missing its gateway reference.');
+        if (in_array(strtoupper(trim((string) $callbackStatus)), [
+            'FAILED',
+            'CANCELLED',
+            'CANCELED',
+            'TIMEOUT',
+            'TIMED OUT',
+            'EXPIRED',
+            'REJECTED',
+        ], true)) {
+            return [
+                'deposit' => $deposit,
+                'successful' => false,
+                'terminal_failure' => true,
+                'message' => 'PayHero reported that the M-Pesa payment failed.',
+            ];
         }
 
-        $status = $this->getTransactionStatus($deposit->gateway_reference);
+        $gatewayReference = $deposit->gateway_reference;
+        $statusLookupReference = $gatewayReference;
+        if (!$statusLookupReference) {
+            if (strcasecmp((string) $callbackStatus, 'Success') !== 0
+                || !is_string($mpesaReceiptNumber)
+                || $mpesaReceiptNumber === '') {
+                throw new RuntimeException('The PayHero deposit is missing its gateway reference.');
+            }
+
+            $statusLookupReference = $mpesaReceiptNumber;
+        }
+
+        $status = $this->getTransactionStatus($statusLookupReference);
         $gatewayStatus = strtoupper((string) data_get($status, 'status'));
-        if (!is_string(data_get($status, 'reference'))
-            || !hash_equals((string) $deposit->gateway_reference, (string) data_get($status, 'reference'))) {
+        $verifiedGatewayReference = data_get($status, 'reference');
+        if (!is_string($verifiedGatewayReference) || $verifiedGatewayReference === ''
+            || ($gatewayReference && !hash_equals((string) $gatewayReference, $verifiedGatewayReference))) {
             throw new RuntimeException('The PayHero transaction status does not match this deposit.');
+        }
+
+        $verifiedExternalReference = data_get($status, 'external_reference');
+        if (!is_string($verifiedExternalReference)
+            || !hash_equals((string) $deposit->reference, $verifiedExternalReference)) {
+            throw new RuntimeException('The PayHero transaction status does not match this deposit.');
+        }
+
+        $verifiedAmount = data_get($status, 'amount');
+        if (!is_numeric($verifiedAmount)
+            || (int) round((float) $verifiedAmount) !== (int) round((float) $deposit->kes_amount)) {
+            throw new RuntimeException('The PayHero transaction status amount does not match this deposit.');
         }
 
         if (strcasecmp((string) $callbackStatus, 'Success') !== 0) {
@@ -142,6 +181,14 @@ class PayHeroService
         if (data_get($status, 'success') !== true
             || $gatewayStatus !== 'SUCCESS') {
             throw new RuntimeException('PayHero has not confirmed this M-Pesa payment.');
+        }
+
+        if (!$gatewayReference) {
+            $deposit->gateway_reference = $verifiedGatewayReference;
+            if (!$deposit->checkout_request_id && is_string($checkoutRequestId) && $checkoutRequestId !== '') {
+                $deposit->checkout_request_id = $checkoutRequestId;
+            }
+            $deposit->save();
         }
 
         return [

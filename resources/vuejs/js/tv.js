@@ -54,15 +54,15 @@ export class TradingViewWebsocket {
 
     onclose(event) {
         if (event.wasClean) {
-            console.log('Соединение закрыто чисто');
+            console.log('Connection closed cleanly.');
         } else {
-            console.log('Обрыв соединения'); // например, "убит" процесс сервера
+            console.log('Connection lost.');
         }
-        console.log('Код: ' + event.code + ' причина: ' + event.reason);
+        console.log('Code: ' + event.code + ', reason: ' + event.reason);
     }
 
     onerror(error) {
-        console.log("Ошибка " + error.message);
+        console.log("WebSocket error: " + error.message);
     }
 
     extractSymbol(tticker) {
@@ -172,7 +172,7 @@ export class TradingViewWebsocket {
                 //barsFromWebSocket();
             } else if (packet.m && packet.m === "timescale_update" && typeof packet.p === "object" && packet.p.length > 1 && packet.p[0] === this.chartSession) {
                 let bars = [];
-                if(packet.p[1].s1.s.length > 1) {
+                if(packet.p[1].s1.s.length > 0) {
                     packet.p[1].s1.s.forEach(bar => {
                         //if (bar.time >= from && bar.time < to) {
                         bars = [...bars, {

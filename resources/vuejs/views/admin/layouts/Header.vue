@@ -16,7 +16,7 @@
 
               <ul class="nav navbar-nav bookmark-icons">
                 <li class="nav-item d-none d-lg-block">
-                  <a class="nav-link nav-link-expand" style="padding: 0.567rem 1.33rem; padding-right: 0.5rem; padding-left: 0.5rem;" data-toggle="tooltip" data-placement="top" title="На весь экран">
+                  <a class="nav-link nav-link-expand" style="padding: 0.567rem 1.33rem; padding-right: 0.5rem; padding-left: 0.5rem;" data-toggle="tooltip" data-placement="top" :title="$i18n.t('admin_header_fullpage')">
                     <i class="ficon bx bx-fullscreen"></i>
                   </a>
                 </li>

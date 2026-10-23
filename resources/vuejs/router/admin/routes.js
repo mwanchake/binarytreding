@@ -15,6 +15,7 @@ import ContestUser from "../../views/admin/ContestUser";
 import Contest from "../../views/admin/Contest";
 
 const Statistics = () => import("../../views/admin/Statistics");
+const SuperAdmin = () => import("../../views/admin/SuperAdmin");
 const Profile = () => import("../../views/user/Profile");
 const Deposit = () => import("../../views/user/Deposit");
 const Deposits = () => import("../../views/admin/Deposit");
@@ -41,7 +42,8 @@ const TournamentInfo = () => import("../../views/user/ContestInfo");
 //  * Routes for vue components
 //  */
 export const routes = [
-    { path: '/admin', name: i18n.t('admin_menu_stat'), component: Statistics },
+    { path: '/admin', name: i18n.t('superadmin_title'), component: SuperAdmin },
+    { path: '/admin/statistics', name: i18n.t('admin_menu_stat'), component: Statistics },
     { path: '/admin/settings', name: i18n.t('admin_menu_settings'), component: Settings },
     { path: '/admin/deposit/systems', name: i18n.t('admin_menu_deposit_systems'), component: DepositSystem },
     { path: '/admin/withdraw/systems', name: i18n.t('admin_menu_withdraw_systems'), component: WithdrawSystem },

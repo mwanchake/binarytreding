@@ -9,7 +9,7 @@
           <h1>@lang('locale.landing_kyc_sub')</h1>
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb justify-content-center bg-transparent p-0 m-0">
-              <li class="breadcrumb-item"><a class="text-dark" href="/">Домашняя</a></li>
+              <li class="breadcrumb-item"><a class="text-dark" href="/">@lang('locale.home')</a></li>
               <li class="breadcrumb-item active text-primary" aria-current="page">@lang('locale.landing_kyc')</li>
             </ol>
           </nav>

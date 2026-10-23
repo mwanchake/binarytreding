@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\Verify\UnVerifyAccountRequest;
 use App\Http\Requests\Admin\Verify\VerifyAccountRequest;
 use App\Models\Models\File;
 use App\Models\Models\VerifyRequest;
+use App\Models\AdminAuditLog;
 use App\Models\Profile;
 use App\User;
 use Carbon\Carbon;
@@ -44,6 +45,11 @@ class VerifyService
             Profile::where('user_id', $request->id)->update([$files[$request->page] => null, $pages[$request->page] => null]);
         }
         VerifyRequest::where('user_id', $request->id)->where('page', $request->page)->delete();
+        AdminAuditLog::record('user.document_reviewed', $request->reason, $request->id, null, [
+            'page' => $request->page,
+            'status' => $request->status,
+            'comment' => $request->comment,
+        ]);
         $mail_data = [
             'headline' => $success ? __('locale.admin_verify_approved', ['page' => $request->page]) : __('locale.admin_verify_decline', ['page' => $request->page]),
             'subtitle' => __('locale.admin_verify_document_status'),
@@ -73,6 +79,7 @@ class VerifyService
         }
         Profile::where('user_id', $request->id)->update(['user_verify_at' => Carbon::now()]);
         VerifyRequest::where('user_id', $request->id)->delete();
+        AdminAuditLog::record('user.account_verified', $request->reason, $request->id);
         $mail_data = [
             'headline' => __('locale.admin_verify_verified'),
             'subtitle' => __('locale.admin_verify_now_verified'),
@@ -102,6 +109,7 @@ class VerifyService
         }
         Profile::where('user_id', $request->id)->update(['user_verify_at' => null]);
         VerifyRequest::where('user_id', $request->id)->delete();
+        AdminAuditLog::record('user.account_unverified', $request->reason, $request->id);
         $mail_data = [
             'headline' => __('locale.admin_verify_not_verified'),
             'subtitle' => __('locale.admin_verify_now_not_verified'),

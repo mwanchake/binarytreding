@@ -31,6 +31,7 @@ return [
   "landing_online" => "Онлайн",
   "landing_profit" => "Прибыль",
   "landing_pairs" => "Пар",
+  "home" => "Главная",
   "landing_how_to_start" => "Как начать торговать",
   "landing_three_stages" => "Всего три этапа для начала работы",
   "landing_register_now" => "Зарегистрируйтесь",

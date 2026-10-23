@@ -13,6 +13,10 @@
                   <label class="align-top">{{ $i18n.t('admin_control_action') }}</label>
                   <select2 v-model="banAction" :options="banActions" :settings="{ settingOption: 'value', settingOption: 'value', minimumResultsForSearch: Infinity }"/>
                 </fieldset>
+                <fieldset class="form-group">
+                  <label>{{ $i18n.t('admin_action_reason') }}</label>
+                  <input v-model.trim="reason" type="text" maxlength="1000" class="form-control">
+                </fieldset>
               </div>
               <div class="col-md-2">
                 <label class="align-top">&nbsp;</label>
@@ -39,15 +43,20 @@ export default {
       banActions: this.options,
       link: this.url,
       getInfoUrl: this.load_url,
+      reason: '',
     }
   },
   methods: {
     banClick: function (){
       let self = this;
-      axios.post(self.link, { action: self.banAction })
+      if (!self.reason || self.reason.length < 10 || !window.confirm(self.$i18n.t('admin_confirm_action'))) {
+        return;
+      }
+      axios.post(self.link, { action: self.banAction, reason: self.reason })
         .then(function (response) {
           if(response.data.success === true) {
             self.loadBanInfo();
+            self.reason = '';
             toastr.success(response.data.message, self.$i18n.t('profile_success'), {
               positionClass: 'toast-bottom-left',
               containerId: 'toast-bottom-left'

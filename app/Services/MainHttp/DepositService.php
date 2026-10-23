@@ -9,6 +9,7 @@ use App\Http\Requests\MainHttp\Deposit\DepositHistoryRequest;
 use App\Http\Requests\MainHttp\Deposit\PayHeroDepositRequest;
 use App\Http\Requests\MainHttp\Deposit\StartDepositRequest;
 use App\Models\Deposit;
+use App\Models\AdminAuditLog;
 use App\Models\DepositSystem;
 use App\Models\ExchangeRates;
 use App\Models\LatestOrder;
@@ -102,6 +103,26 @@ class DepositService
         ];
     }
 
+    public function payHeroDepositStatus($reference)
+    {
+        $deposit = Deposit::where('reference', $reference)
+            ->where('system_id', 'payhero')
+            ->where('user_id', Auth::id())
+            ->first(['status']);
+
+        if (!$deposit) {
+            return [
+                'data' => ['message' => 'Deposit not found.'],
+                'status' => 404,
+            ];
+        }
+
+        return [
+            'data' => ['status' => (int) $deposit->status],
+            'status' => 200,
+        ];
+    }
+
     public function processPayHeroWebhook(array $payload)
     {
         $result = app(PayHeroService::class)->processWebhook($payload);
@@ -141,6 +162,11 @@ class DepositService
             $user->increment('balance', $credit);
             $deposit->status = 1;
             $deposit->save();
+            AdminAuditLog::record('deposit.payhero_verified', 'Deposit credited after independent PayHero status verification.', $user->id, $deposit->gateway_reference ?: $deposit->reference, [
+                'deposit_id' => $deposit->id,
+                'amount' => $credit,
+                'currency' => 'USD',
+            ]);
 
             if ($user->referer_id) {
                 $referrer = User::where('id', $user->referer_id)->first();
@@ -452,6 +478,11 @@ class DepositService
                 }
                 Referral::where('user_id', $user->referer_id)->update(['deposit_count' => DB::raw("deposit_count+$deposit->amount")]);
             }
+            AdminAuditLog::record('deposit.provider_verified', 'Deposit credited after payment provider callback validation.', $user->id, (string) $orderId, [
+                'deposit_id' => $deposit->id,
+                'amount' => $deposit->amount,
+                'system_id' => $deposit->system_id,
+            ]);
             return true;
         } else {
             return false;

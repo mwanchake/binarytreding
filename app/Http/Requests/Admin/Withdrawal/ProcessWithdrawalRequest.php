@@ -12,8 +12,9 @@ class ProcessWithdrawalRequest extends FormRequest
         return [
             'id' => 'required|integer|min:1',
             'text' => 'required|string|min:1',
-            'status' => 'numeric|min:1|max:2',
-            'comment' => 'string|nullable'
+            'status' => 'required|integer|in:1,2,3,4',
+            'comment' => 'required_if:status,2,3,4|string|min:10|max:1000',
+            'transaction_reference' => 'required_if:status,1|string|max:191',
         ];
     }
 }

@@ -31,6 +31,7 @@
    "landing_online" => "online",
    "landing_profit" => "Beneficio",
    "landing_pairs" => "par",
+   "home" => "Inicio",
    "landing_how_to_start" => "Cómo empezar a operar",
    "landing_three_stages" => "Sólo tres pasos para empezar",
    "landing_register_now" => "Register",

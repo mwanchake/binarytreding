@@ -79,7 +79,7 @@ export default {
             if (type === 'display') {
               text = data;
             }
-            return 'Страница №' + text;
+            return self.$i18n.t('admin_verify_page', { page: text });
           }
         },
         {
