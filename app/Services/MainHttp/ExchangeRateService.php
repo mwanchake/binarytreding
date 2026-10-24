@@ -8,6 +8,8 @@ use RuntimeException;
 
 class ExchangeRateService
 {
+    private const MAX_RATE_AGE_MINUTES = 30;
+
     public function updateUsdKesRate()
     {
         $response = Http::acceptJson()
@@ -68,8 +70,33 @@ class ExchangeRateService
         return $exchangeRate;
     }
 
+    public function getFreshUsdKesRate()
+    {
+        $exchangeRate = ExchangeRates::where('symbol', 'USD_KES')
+            ->whereNotNull('effective_rate')
+            ->orderByDesc('updated_at')
+            ->first();
+
+        if ($exchangeRate
+            && $exchangeRate->updated_at
+            && $exchangeRate->updated_at->greaterThan(now()->subMinutes(self::MAX_RATE_AGE_MINUTES))
+            && $this->isUsableRate($exchangeRate)) {
+            return $exchangeRate;
+        }
+
+        return $this->updateUsdKesRate();
+    }
+
     private function isValidRate($rate)
     {
         return is_numeric($rate) && is_finite((float) $rate) && (float) $rate > 0;
+    }
+
+    private function isUsableRate($exchangeRate)
+    {
+        return $this->isValidRate($exchangeRate->market_rate)
+            && $this->isValidRate($exchangeRate->effective_rate)
+            && is_numeric($exchangeRate->markup_percent)
+            && (float) $exchangeRate->markup_percent >= 0;
     }
 }

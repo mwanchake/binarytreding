@@ -33,8 +33,12 @@ class DepositService
     public function initiatePayHeroDeposit(PayHeroDepositRequest $request)
     {
         try {
-            $exchangeRate = app(ExchangeRateService::class)->getLatestUsdKesRate();
-        } catch (ExchangeRateUnavailableException $exception) {
+            $exchangeRate = app(ExchangeRateService::class)->getFreshUsdKesRate();
+        } catch (\RuntimeException $exception) {
+            Log::error('Unable to obtain a fresh USD/KES exchange rate for a deposit.', [
+                'message' => $exception->getMessage(),
+            ]);
+
             return [
                 'data' => [
                     'success' => false,

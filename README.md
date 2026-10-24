@@ -425,7 +425,7 @@ These environment overrides affect only that server process. The frontend defaul
 
 ## PayHero M-Pesa Deposits
 
-Configure `PAYHERO_API_USERNAME`, `PAYHERO_API_PASSWORD`, and `PAYHERO_CHANNEL_ID` in `.env` using the API credentials and payment channel from the PayHero dashboard. Configure `EXCHANGE_MARKUP_PERCENT=2` and optionally `EXCHANGE_RATE_API_URL` (the default is `https://open.er-api.com/v6/latest/USD`). Run `php artisan migrate`, then run `php artisan rates:update` once to seed the USD/KES rate record. The Laravel scheduler refreshes the rate every 30 minutes; ensure the scheduler is running in production (for example, with Laravel's standard `schedule:run` cron entry). Each refresh stores the market rate and markup-adjusted effective rate in `exchange_rates`. Deposits only read the latest valid stored rate and are rejected until one has been stored.
+Configure `PAYHERO_API_USERNAME`, `PAYHERO_API_PASSWORD`, and `PAYHERO_CHANNEL_ID` in `.env` using the API credentials and payment channel from the PayHero dashboard. Configure `EXCHANGE_MARKUP_PERCENT=2` and optionally `EXCHANGE_RATE_API_URL` (the default is `https://open.er-api.com/v6/latest/USD`). Run `php artisan migrate`, then run `php artisan rates:update` once to seed the USD/KES rate record. The Laravel scheduler refreshes the rate every 30 minutes when available, and a PayHero deposit refreshes the rate on demand when no usable rate exists or the stored rate is older than 30 minutes. Each refresh stores the market rate and markup-adjusted effective rate in `exchange_rates`. Deposits are rejected only if the on-demand provider request fails.
 
 ## Binance USDT (BEP20) Deposit Display
 
