@@ -22,8 +22,7 @@
         "sass-loader": "^8.0.0",
         "vue-loader": "^15.9.5",
         "vue-template-compiler": "^2.6.12",
-        "webpack": "5.88.2",
-        "ws": "8.18.3"
+        "webpack": "5.88.2"
     },
     "dependencies": {
         "@chenfengyuan/vue-countdown": "^1.1.5",
@@ -51,6 +50,7 @@
         "vue-inputmask": "^0.2.1",
         "vue-router": "^3.4.3",
         "vue-the-mask": "^0.11.1",
-        "vuejs-countdown-timer": "^2.1.2"
+        "vuejs-countdown-timer": "^2.1.2",
+        "ws": "8.18.3"
     }
 }
