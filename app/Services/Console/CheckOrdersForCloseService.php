@@ -51,7 +51,15 @@ class CheckOrdersForCloseService {
 
     public function processOrders($opened, $market, $type = 'real'){
         foreach($opened as $open){
-            $open->delete();
+            $events = [];
+            DB::transaction(function () use ($open, $market, $type, &$events) {
+            $open = $open->newQuery()
+                ->whereKey($open->getKey())
+                ->lockForUpdate()
+                ->first();
+            if (!$open) {
+                return;
+            }
             $closed_price_obj = Ticks::where('symbol_id', $open->symbol_id)
                 ->where('created_at', '<', Carbon::parse($open->close_at)->format('Y-m-d H:i:s.u'))
                 ->orderBy('created_at', 'desc')
@@ -146,13 +154,13 @@ class CheckOrdersForCloseService {
             $diff = date_diff(new \DateTime($model->close_at), new \DateTime($model->open_at));
             $model->expiration = sprintf("%'.02d", $diff->h).':'.sprintf("%'.02d", $diff->i).':'.sprintf("%'.02d", $diff->s);
             if($type == 'real'){
-                broadcast(new CloseOptionEvent($model, $open->id, $success, $open->user_id));
+                $events[] = new CloseOptionEvent($model, $open->id, $success, $open->user_id);
             }
             elseif($type == 'demo'){
-                broadcast(new CloseDemoOptionEvent($model, $open->id, $success, $open->user_id));
+                $events[] = new CloseDemoOptionEvent($model, $open->id, $success, $open->user_id);
             }
             elseif($type == 'tournament'){
-                broadcast(new CloseContestOptionEvent($model, $open->id, $success, $open->user_id, $open->contest_id));
+                $events[] = new CloseContestOptionEvent($model, $open->id, $success, $open->user_id, $open->contest_id);
             }
             echo "Closed $type with id $open->id with status $success for user $open->user_id".PHP_EOL;
             if(!$open->hedging and $type == 'real'){ // Если не хеджирование и не демо счет
@@ -160,24 +168,34 @@ class CheckOrdersForCloseService {
             }
             if($profit > 0 and $type == 'real'){ // Если прибыль на реал счете
                 $user = User::find($open->user_id);
+                if (!$user) {
+                    throw new \RuntimeException('Cannot settle real order: user not found.');
+                }
                 $user->balance = $user->balance + $profit;
                 $user->save();
                 $referer_id = $user->referer_id;
                 if($referer_id and !$user->left_turnover){ // Если бонус отработан, даем рефереру процент
                     $balance_to_referer = $model->amount * 0.02;
-                    if(User::where('id', $referer_id)->first()->partner_status){
+                    $referer = User::where('id', $referer_id)->first();
+                    if (!$referer) {
+                        throw new \RuntimeException('Cannot settle real order: referrer not found.');
+                    }
+                    if($referer->partner_status){
                         $balance_to_referer = $model->amount * 0.03;
                     }
                     User::where('id', $referer_id)->update(['balance' => DB::raw("balance+$balance_to_referer")]);
                     Referral::where('user_id', $referer_id)->update(['balance' => DB::raw("reward+$balance_to_referer")]);
                 }
-                broadcast(new ChangeBalance($user->balance, $user));
+                $events[] = new ChangeBalance($user->balance, $user);
             }
             elseif($profit > 0 and $type == 'demo'){ // Если прибыль на демо счете
-                $user = User::find($open->user_id);
+                $user = User::where('id', $open->user_id)->lockForUpdate()->first();
+                if (!$user) {
+                    throw new \RuntimeException('Cannot settle demo order: user not found.');
+                }
                 $user->demo_balance = $user->demo_balance + $profit;
                 $user->save();
-                broadcast(new ChangeDemoBalance($user->demo_balance, $user));
+                $events[] = new ChangeDemoBalance($user->demo_balance, $user);
             } elseif($type == 'tournament'){ // Если прибыль на конкурсном счете
                 $data = [
                     'profit_percent' => DB::raw('((balance + '.$profit.') / (initial_balance+paid))*100'),
@@ -188,9 +206,16 @@ class CheckOrdersForCloseService {
                     $data = array_merge($data, [
                         'balance' => DB::raw('balance+' . $profit)
                     ]);
-                    ContestUser::where('user_id', $open->user_id)->where('contest_id', $open->contest_id)->update($data);
-                    $contest_user = ContestUser::where('user_id', $open->user_id)->where('contest_id', $open->contest_id)->first();
-                    broadcast(new ChangeContestBalance($contest_user->balance, $contest_user, $open->contest_id));
+                    $contest_user = ContestUser::where('user_id', $open->user_id)
+                        ->where('contest_id', $open->contest_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if (!$contest_user) {
+                        throw new \RuntimeException('Cannot settle tournament order: contest user not found.');
+                    }
+                    $contest_user->update($data);
+                    $contest_user->refresh();
+                    $events[] = new ChangeContestBalance($contest_user->balance, $contest_user, $open->contest_id);
                 }
             }
 
@@ -265,8 +290,19 @@ class CheckOrdersForCloseService {
                     'daily_loss_count' => DB::raw("daily_loss_count+".($profit == 0 ? '1' : '0')),
                 ]);
             }
-            if($type == 'real' and  User::where('id', $open->user_id)->first()->balance < 1 and !OpenOrders::where('user_id', $open->user_id)->count()){
-                User::where('id', $open->user_id)->update(['bonus' => 0, 'all_turnover' => 0, 'left_turnover' => 0]);
+            if($type == 'real'){
+                $cleanup_user = User::where('id', $open->user_id)->lockForUpdate()->first();
+                if (!$cleanup_user) {
+                    throw new \RuntimeException('Cannot settle real order: user not found during cleanup.');
+                }
+                if($cleanup_user->balance < 1 and !OpenOrders::where('user_id', $open->user_id)->count()){
+                    $cleanup_user->update(['bonus' => 0, 'all_turnover' => 0, 'left_turnover' => 0]);
+                }
+            }
+            $open->delete();
+            });
+            foreach ($events as $event) {
+                broadcast($event);
             }
         }
 

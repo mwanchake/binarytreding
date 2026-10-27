@@ -285,23 +285,20 @@
                                                                       {{ scope.props.hours }}:{{ scope.props.minutes }}:{{ scope.props.seconds }}
                                                                   </small>
 
-                                                                  <small style="margin-top: -3.4px; font-size:10px;"
-                                                                         class="text-white justify-content-left d-flex position-absolute w-100">
+                                                                  <small class="trade-progress-meta trade-progress-meta-left text-white">
                                                                       <i v-show="open.type === 1"
                                                                          class="bx bx-trending-up"
                                                                          style="font-size: 12px;padding-left: 1px;padding-top: 3px;"></i>
                                                                       <i v-show="open.type === 0"
                                                                          class="bx bx-trending-down"
                                                                          style="font-size: 12px;padding-left: 1px;padding-top: 1px;"></i>
-                                                                      <span class="text-white"
-                                                                            style="padding-top: 1px;">{{
+                                                                      <span class="text-white">{{
                                                                           open.percent
                                                                         }}%</span>
                                                                   </small>
 
                                                                   <small v-text="open.amount + ' $'"
-                                                                         style="margin-top: -3.4px; font-size:12px; padding-right:1px;"
-                                                                         class="text-white justify-content-end d-flex position-absolute w-100"></small>
+                                                                         class="trade-progress-meta trade-progress-meta-right text-white"></small>
                                                               </div>
                                                             </template>
                                                             <template slot="end-text" slot-scope="scope">
@@ -368,20 +365,18 @@
                                                                 {{ open.expiration }}
                                                             </small>
 
-                                                            <small style="margin-top: -3.4px; font-size:10px;"
-                                                                   class="text-white justify-content-left d-flex position-absolute w-100">
+                                                            <small class="trade-progress-meta trade-progress-meta-left text-white">
                                                                 <i v-show="open.type === 1" class="bx bx-trending-up"
                                                                    style="font-size: 12px;padding-left: 1px;padding-top: 3px;"></i>
                                                                 <i v-show="open.type === 0" class="bx bx-trending-down"
                                                                    style="font-size: 12px;padding-left: 1px;padding-top: 1px;"></i>
-                                                                <span class="text-white" style="padding-top: 1px;">{{
+                                                                <span class="text-white">{{
                                                                     open.percent
                                                                   }}%</span>
                                                             </small>
 
                                                             <small v-text="open.amount + ' $'"
-                                                                   style="margin-top: -3.4px; font-size:12px; padding-right:1px;"
-                                                                   class="text-white justify-content-end d-flex position-absolute w-100"></small>
+                                                                   class="trade-progress-meta trade-progress-meta-right text-white"></small>
                                                         </div>
                                                     </span>
                         </div>
@@ -952,5 +947,36 @@ body.dark-layout .collapsible .card.open, body.dark-layout .accordion .card.open
   transition: all 200ms linear 0s;
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.trade-progress-meta {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.trade-progress-meta-left {
+  left: 6px;
+}
+
+.trade-progress-meta-right {
+  right: 6px;
+  font-size: 12px;
+}
+
+@media screen and (max-width: 576px) {
+  .trade-progress-meta-left {
+    left: 4px;
+  }
+
+  .trade-progress-meta-right {
+    right: 4px;
+    font-size: 11px;
+  }
 }
 </style>

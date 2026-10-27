@@ -127,7 +127,7 @@ class TradingService
                     return (['data' => ['message' => __('locale.trading_not_enough_money')], 'status' => 422]);
                 }
             } elseif ($request->type == 'demo') {
-                if (Auth::user()->demo_balance - $request->amount < 0) {
+                if ((float) Auth::user()->demo_balance < (float) $request->amount) {
                     return (['data' => ['message' => __('locale.trading_not_enough_money')], 'status' => 422]);
                 }
             } elseif ($request->type == 'tournament') {
@@ -178,14 +178,48 @@ class TradingService
             if (OpenOrders::where('user_id', Auth::user()->id)->where('symbol_id', $request->symbol)->where('type', '<>', $request->direction)->count()) {
                 $hedge = 1;
             }
+            $demoOrderCreated = false;
             if ($request->type == 'real') { // Если реальный счет
                 $model = new OpenOrders();
                 User::where('id', Auth::user()->id)->update(['balance' => DB::raw('balance-' . $request->amount)]);
                 broadcast(new ChangeBalance(Auth::user()->balance - $request->amount, Auth::user()));
             } elseif ($request->type == 'demo') {
-                $model = new OpenDemoOrders();
-                User::where('id', Auth::user()->id)->update(['demo_balance' => DB::raw('demo_balance-' . $request->amount)]);
-                broadcast(new ChangeDemoBalance(Auth::user()->demo_balance - $request->amount, Auth::user()));
+                try {
+                    $demoSettlement = DB::transaction(function () use ($request, $seconds, $price, $hedge, $symbol) {
+                        $user = User::where('id', Auth::user()->id)
+                            ->lockForUpdate()
+                            ->first();
+                        if (!$user || (float) $user->demo_balance < (float) $request->amount) {
+                            return null;
+                        }
+
+                        $user->demo_balance -= $request->amount;
+                        $user->save();
+
+                        $model = new OpenDemoOrders();
+                        $model->symbol_id = $request->symbol;
+                        $model->user_id = $user->id;
+                        $model->type = $request->direction;
+                        $model->open_price = $price;
+                        $model->hedging = $hedge;
+                        $model->percent = $symbol->percent;
+                        $model->close_at = Carbon::now()->addSeconds($seconds)->format('Y-m-d H:i:s.u');
+                        $model->created_at = Carbon::now()->format('Y-m-d H:i:s.u');
+                        $model->amount = $request->amount;
+                        $model->save();
+
+                        return ['model' => $model, 'balance' => $user->demo_balance];
+                    });
+                } catch (\Throwable $exception) {
+                    return (['data' => ['message' => __('locale.trading_place_error')], 'status' => 422]);
+                }
+
+                if ($demoSettlement === null) {
+                    return (['data' => ['message' => __('locale.trading_not_enough_money')], 'status' => 422]);
+                }
+                $model = $demoSettlement['model'];
+                $demoBalanceAfter = $demoSettlement['balance'];
+                $demoOrderCreated = true;
             } elseif ($request->type == 'tournament') {
                 $model = new ContestOpenOrder();
                 $model->contest_id = $request->id;
@@ -196,16 +230,21 @@ class TradingService
                 broadcast(new ChangeContestBalance($user_contest->balance, $user_contest, $request->id));
             }
 
-            $model->symbol_id = $request->symbol;
-            $model->user_id = Auth::user()->id;
-            $model->type = $request->direction;
-            $model->open_price = $price;
-            $model->hedging = $hedge;
-            $model->percent = $symbol->percent;
-            $model->close_at = Carbon::now()->addSeconds($seconds)->format('Y-m-d H:i:s.u');
-            $model->created_at = Carbon::now()->format('Y-m-d H:i:s.u');
-            $model->amount = $request->amount;
-            $model->save();
+            if (!$demoOrderCreated) {
+                $model->symbol_id = $request->symbol;
+                $model->user_id = Auth::user()->id;
+                $model->type = $request->direction;
+                $model->open_price = $price;
+                $model->hedging = $hedge;
+                $model->percent = $symbol->percent;
+                $model->close_at = Carbon::now()->addSeconds($seconds)->format('Y-m-d H:i:s.u');
+                $model->created_at = Carbon::now()->format('Y-m-d H:i:s.u');
+                $model->amount = $request->amount;
+                $model->save();
+            }
+            if ($request->type == 'demo') {
+                broadcast(new ChangeDemoBalance($demoBalanceAfter, Auth::user()->fresh()));
+            }
             $model->expiration = $seconds - 1;
             $model->timestamp = Carbon::parse($model->close_at)->timestamp;
             return ['data' => $model, 'status' => 200];
