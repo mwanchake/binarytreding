@@ -1,4 +1,5 @@
 const { WebSocket, WebSocketServer } = require('ws');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
@@ -31,15 +32,27 @@ function closeSocket(socket, code, reason) {
     }
 }
 
+const httpServer = http.createServer((request, response) => {
+    const requestUrl = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+
+    if (requestUrl.pathname === '/' || requestUrl.pathname === '/healthz') {
+        response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        response.end('TradingView websocket relay is running.\n');
+        return;
+    }
+
+    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    response.end('Not Found\n');
+});
+
 const server = new WebSocketServer({
-    host,
-    port,
+    server: httpServer,
     verifyClient: ({ origin }, callback) => {
         callback(allowedOrigins.has(origin), 403, 'Local development origin required');
     },
 });
 
-server.on('listening', () => {
+httpServer.on('listening', () => {
     console.log(`TradingView websocket relay listening on ws://${host}:${port}`);
 });
 
@@ -89,7 +102,14 @@ server.on('connection', (client) => {
     });
 });
 
+httpServer.on('error', (error) => {
+    console.error(`TradingView websocket relay failed: ${error.message}`);
+    process.exitCode = 1;
+});
+
 server.on('error', (error) => {
     console.error(`TradingView websocket relay failed: ${error.message}`);
     process.exitCode = 1;
 });
+
+httpServer.listen(port, host);

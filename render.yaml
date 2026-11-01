@@ -33,6 +33,7 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile.tradingview-proxy
     dockerContext: .
+    healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production
